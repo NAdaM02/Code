@@ -17,6 +17,6 @@ git push --force --quiet
 echo.
 echo Upload successful.
 
-TIMEOUT /T 3 > nul
+TIMEOUT /T 1 > nul
 
 exit
