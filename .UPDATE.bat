@@ -20,4 +20,7 @@ echo.
 echo Upload successful.
 
 rem Remove the pause command if you don't want to wait for user input
-pause > nul
+
+timeout /t 3
+
+exit
