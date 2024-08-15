@@ -358,7 +358,7 @@ def press_new_game():
 def play_a_game():
     global _sum, score, game_number
     
-    start_game();   #print(f'\n{game_number}:',end='');   sys.stdout.flush()
+    start_game();   print(f'\n{game_number}:',end='');   sys.stdout.flush()
     answered_count = 0
 
     question_text = ''
@@ -373,16 +373,40 @@ def play_a_game():
 
         previous_question_text = question_text
     
-    game_score = get_game_score();   #print(" "*(7-len(str(game_number)))+(f"|| {game_score}" if game_score < 0 else f"|| +{game_score}"));   sys.stdout.flush()
+    game_score = get_game_score();   print(" "*(7-len(str(game_number)))+(f"|| {game_score}" if game_score < 0 else f"|| +{game_score}"));   sys.stdout.flush()
     _sum += game_score
 
     game_number += 1
 
     score = get_score()
 
-    #print_status()
+    print_status()
 
     press_new_game()
+
+def simply_play_a_game():
+    global _sum
+
+    start_game()
+    
+    question_text = ''
+    previous_question_text = ''
+    while answered_count < 6:
+        while question_text == previous_question_text :
+            question_text = get_question_text()
+
+        select_answer_for_question(question_text)
+
+        answered_count += 1
+
+        previous_question_text = question_text
+
+    game_score = get_game_score()
+    _sum += game_score
+
+    press_new_game()
+    
+    
 
 
 
@@ -447,7 +471,7 @@ if __name__ == "__main__":
     ETAs = []
 
     while goal_mode == 'run' or (goal_mode == "cups" and _sum < goal) or (goal_mode == "time" and (now() - start_time) < goal):
-        play_a_game()
+        simply_play_a_game()
 
 
     driver.quit()
