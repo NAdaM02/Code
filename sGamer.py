@@ -210,9 +210,13 @@ def click_element_if_there(wait_seconds_between=0, css_selector_key='', outer_ht
     return element
 
 
-def wait_for_element_and_click(css_selector_key='', outer_html_key='', xpath_key='', xpath='',  timeout=60):
+def wait_for_element_and_click_while_there(css_selector_key='', outer_html_key='', xpath_key='', xpath='',  timeout=60):
     element = wait_for_element(css_selector_key=css_selector_key, outer_html_key=outer_html_key, xpath_key=xpath_key, xpath=xpath,  timeout=timeout)
     element.click()
+
+    element_if_still_there = get_element(css_selector_key=css_selector_key, outer_html_key=outer_html_key, xpath_key=xpath_key, xpath=xpath)
+    while element_if_still_there:
+        element_if_still_there = get_element(css_selector_key=css_selector_key, outer_html_key=outer_html_key, xpath_key=xpath_key, xpath=xpath)
 
     return element
     
@@ -293,8 +297,9 @@ def get_score():
 
 
 def start_game():
-    wait_for_element_and_click(css_selector_key=f'{difficulty}_difficulty_button')
-    wait_for_element_and_click(css_selector_key='start_game_button')
+    wait_for_element_and_click_while_there(css_selector_key=f'{difficulty}_difficulty_button')
+    wait_for_element_and_click_while_there(css_selector_key='start_game_button')
+        
 
 def get_question_text():
     element = wait_for_element(css_selector_key='question_text')
@@ -311,7 +316,7 @@ def select_answer_for_question(question_text):
             del(place_options[answer_number-1])
             place = place_options[ random.randint(0,2) ]
     
-    wait_for_element_and_click(css_selector_key=f'answer_button_{place}')
+    wait_for_element_and_click_while_there(css_selector_key=f'answer_button_{place}')
 
 
 def get_game_score():
@@ -349,7 +354,7 @@ def print_status():
 
 
 def press_new_game():
-    wait_for_element_and_click('new_game_button')
+    wait_for_element_and_click_while_there('new_game_button')
 
 
 
@@ -456,7 +461,7 @@ if __name__ == "__main__":
         wait_seconds(2)
     print('- logged in.')
     
-    element = wait_for_element_and_click(css_selector_key='games_section_button')
+    element = wait_for_element_and_click_while_there(css_selector_key='games_section_button')
 
     starting_score = get_score()
 
