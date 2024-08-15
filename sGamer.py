@@ -224,7 +224,10 @@ def wait_for_element_and_click_while_there(css_selector_key='', outer_html_key='
 
     element_if_still_there = get_element(css_selector_key=css_selector_key, outer_html_key=outer_html_key, xpath_key=xpath_key, xpath=xpath)
     while element_if_still_there:
-        element_if_still_there.click()
+        try:
+            element_if_still_there.click()
+        except:
+            pass
         element_if_still_there = get_element(css_selector_key=css_selector_key, outer_html_key=outer_html_key, xpath_key=xpath_key, xpath=xpath)
 
     return element
