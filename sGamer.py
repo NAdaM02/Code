@@ -391,6 +391,7 @@ def simply_play_a_game():
     
     question_text = ''
     previous_question_text = ''
+    answered_count = 0
     while answered_count < 6:
         while question_text == previous_question_text :
             question_text = get_question_text()
