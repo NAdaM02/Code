@@ -314,8 +314,11 @@ def start_game():
         
 
 def get_question_text():
-    element = wait_for_element(css_selector_key='question_text')
-    return element.text
+    try:
+        element = wait_for_element(css_selector_key='question_text', timeout=10)
+        return element.text
+    except:
+        return None
 
 def select_answer_for_question(question_text):
     answer_number = QUESTIONS_AND_ANSWERS[question_text]
@@ -408,14 +411,11 @@ def simply_play_a_game():
     
     question_text = ''
     previous_question_text = ''
-    answered_count = 0
-    while answered_count < 6:
+    while not get_element(css_selector_key='new_game_button'):
         while question_text == previous_question_text :
             question_text = get_question_text()
-
-        select_answer_for_question(question_text)
-
-        answered_count += 1
+        if question_text:
+            select_answer_for_question(question_text)
 
         previous_question_text = question_text
 
