@@ -1,4 +1,4 @@
 @echo off
 
-echo So sigma...
+echo Saying that is lame. Say cool instead.
 echo.
