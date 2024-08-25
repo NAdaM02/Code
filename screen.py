@@ -93,16 +93,6 @@ class Monitor:
 
 
 
-#surround = ''
-"""def printDisplay():
-    global display_map, surround
-    output = "\n" + (surround + " ") * (width + 2) + "\n"
-    for row in display_map:
-        output += surround + " " + " ".join(row) + " " + surround + "\n"
-    output += (surround + " ") * (width + 2)
-    clearDisplay()
-    stdout.write(output)
-    stdout.flush()"""
 
 def flashScreen(display_map:DisplayMap, terminal_display:TerminalDisplay, speed = 0.02):
     global OPAS
@@ -167,11 +157,11 @@ if __name__ == "__main__":
 
     colorama.init() # Initialize terminal formatting
 
- #   try:
+
     while True:
         display_map = monitor.to_map(width, height)
         terminal_display.update(display_map)
-#except:
+
     terminal_display.clear()
 
     print(colorama.Style.RESET_ALL)  # Reset terminal formatting
