@@ -4,8 +4,9 @@ import colorama
 import os
 import numpy as np
 import cv2
-from PIL import ImageGrab
+from PIL.ImageGrab import grab as take_screenshot
 from sys import stdout
+from PIL import Image
 
 
 
@@ -61,13 +62,28 @@ class TerminalDisplay:
             wait_seconds(stay_seconds)
 
 
-class Image:
+class Custom_Image:
     def __init__(self, image_array=np.array([])):
         self.array = image_array
 
-    def gray_downscale(self, target_width, target_height):
+    def gray(self):
+        self.array = cv2.cvtColor(np.array(self.array), cv2.COLOR_RGB2GRAY)
+        return self
+
+    def downscale(self, target_width, target_height):
         self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_AREA)
         return self
+
+    def be_screenshot(self):
+        self.array = np.array(take_screenshot())
+        return self
+    
+    def save_as_img(self, name:str='image'):
+        image = Image.fromarray(self.array)
+        return image.save(f'{name}.png')
+    
+    def save_as_text(self, name:str='text'):
+        return np.savetxt(f'{name}.txt', self.array, fmt='%f', delimiter=' | ')
 
 
 class Monitor:
@@ -75,11 +91,11 @@ class Monitor:
         pass
 
     def to_map(target_width, target_height):
-        screenshot = ImageGrab.grab()
-        screenshot = cv2.cvtColor(np.array(screenshot), cv2.COLOR_RGB2GRAY)
+        img = Custom_Image(screenshot)
+        img.be_screenshot()
 
-        img = Image(screenshot)
-        img.gray_downscale(target_width, target_height)
+        img.gray()
+        img.downscale(target_width, target_height)
 
         indices = np.digitize(img.array, THRESHOLDS)
         monitor_display_map = DisplayMap(width=target_width, height=target_height)
@@ -119,6 +135,18 @@ def moveCharacterAcrossDisplay(display_map:DisplayMap, terminal_display, move_he
             terminal_display.update(display_map, stay_seconds=0.01*(i*(1/5)))
 
 
+def get_terminal_display_size():
+    inp = input('input size coherent [11,14,19,28,56] or size:  ')
+    if ('x' not in inp) and ('*' not in inp):
+        x = int(inp) if inp != '' else 19
+        width, height = x*16, x*9
+    else:
+        width, height = inp.split('x').split('*')
+        int(height); int(width)
+    
+    return height, width
+
+
 
 if False:
     OPAS10 = tuple(" -~+xrsd#$")
@@ -143,9 +171,7 @@ if __name__ == "__main__":
 
     os.system('cls')
 
-    inp = input('input size coherent [11,14,19,28,56]:  ')
-    x = int(inp) if inp != '' else 19
-    width, height = x*16, x*9
+    height, width = get_terminal_display_size()
 
     display_map = DisplayMap(width, height)
 
