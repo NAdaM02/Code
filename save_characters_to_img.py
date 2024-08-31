@@ -36,8 +36,7 @@ class Custom_Image:
 if __name__ == '__main__' :
     os.system('mkdir Data')
 
-
-    char_list = tuple(" `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@")
+    char_list = tuple("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?/")
 
     for i in range(len(char_list)):
         os.system('cls')
@@ -51,4 +50,3 @@ if __name__ == '__main__' :
         img.gray()
 
         img.save_as_img(f"image{i}")
-        img.save_as_text(f"text{i}")
