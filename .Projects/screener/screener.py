@@ -13,8 +13,8 @@ from PIL import Image
 class DisplayMap:
     def __init__(self, width, height, d_list=None, filler=' '): 
         if d_list:
-            self.width = len(ls[0])
-            self.height = len(ls)
+            self.width = len(d_list[0])
+            self.height = len(d_list)
             self.val = np.array(d_list, dtype='<U1')
         else:
             self.width = width
@@ -102,6 +102,22 @@ class CustomImage:
         
         return img_map
 
+    def get_subarray(self, first_rows:int= None, last_rows:int= None, first_columns: int = None, last_columns: int = None):
+
+        if first_rows is None:
+            first_rows = 0
+        if last_rows is None:
+            last_rows = array.shape[0] - 1
+        if first_columns is None:
+            first_columns = 0
+        if last_columns is None:
+            last_columns = array.shape[1] - 1
+
+        if first_rows < 0 or last_rows >= self.array.shape[0] or first_columns < 0 or last_columns >= self.array.shape[1]:
+            raise IndexError("Indices are out of bounds.")
+
+        return self.array[first_rows:last_rows+1, first_columns:last_columns+1]
+
 
 class Monitor:
     def __init__(self):
@@ -121,14 +137,6 @@ class Monitor:
         return monitor_display_map
 
 
-class LetterMap:
-    pass
-
-
-
-
-
-
 
 
 def flashScreen(display_map:DisplayMap, terminal_display:TerminalDisplay, speed = 0.02):
@@ -140,7 +148,7 @@ def flashScreen(display_map:DisplayMap, terminal_display:TerminalDisplay, speed 
         display_map.fill(char)
         terminal_display.update(display_map, stay_seconds=speed)
 
-def moveCharacterAcrossDisplay(display_map:DisplayMap, terminal_display, move_height=""):
+"""def moveCharacterAcrossDisplay(display_map:DisplayMap, terminal_display, move_height=""):
     if move_height=='' :
         move_height = display_map.height // 2
     move_speed = 1
@@ -153,7 +161,7 @@ def moveCharacterAcrossDisplay(display_map:DisplayMap, terminal_display, move_he
         for x in range(width - 1, -1, -move_speed):
             display_map.val[10][min(x + move_speed, width - 1)] = display_map.filler
             #display_map[move_height][x] = char
-            terminal_display.update(display_map, stay_seconds=0.01*(i*(1/5)))
+            terminal_display.update(display_map, stay_seconds=0.01*(i*(1/5)))"""
 
 def get_terminal_display_size():
     inp = input('input size coherent [11,14,19,28,56] or size:  ')
@@ -215,17 +223,19 @@ if __name__ == "__main__":
     char_width = int(display_width//10)
     char_height = int(char_width//CHAR_IMAGE_RATIO)
 
-    char_map = CHAR_IMAGES["f"].to_map(char_width, char_height, grayed=True)
-
-    """for row in char_map.val:
-        print(' '.join(row))"""
-
     char_top_left_display_row = 4*display_height//10
     char_top_left_display_col = 4*display_width//10
 
-    display_map.add_map(col=char_top_left_display_col, row=char_top_left_display_row, added_array=char_map.val)
+    for i in range(len(CHAR_LIST)):
+        display_map.fill()
 
-    terminal_display.update(display_map)
+        char_map = CHAR_IMAGES[CHAR_LIST[i]].to_map(char_width, char_height, grayed=True)
+
+        display_map.add_map(col=char_top_left_display_col+i, row=char_top_left_display_row-i, added_array=char_map.val)
+
+        terminal_display.update(display_map)
+
+        wait_seconds(0.5)
 
     #terminal_display.clear()
 
