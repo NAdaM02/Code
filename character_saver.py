@@ -36,8 +36,10 @@ class Custom_Image:
 if __name__ == '__main__' :
     os.system('mkdir Data')
 
-    char_list = tuple("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?/ ")
-    char_list = tuple(" ")
+    #char_list = tuple("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?/ áéíóöőúüű")
+    #char_list = tuple(" ")
+    #char_list = tuple("áéíóöőúüű")
+    char_list = tuple("áéíóöőúüű".upper())
 
     for i in range(len(char_list)):
         os.system('cls')
