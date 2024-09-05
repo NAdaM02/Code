@@ -1,10 +1,14 @@
 from PIL import Image
 import numpy as np
 from time import sleep as wait_seconds
+import os
 
 vals = {}
+imgs = []
 for i in range(92):
-    img_array = np.array(Image.open(f'./Data/old_OPAS/{i}.png'))
+    img = Image.open(f'./Data/old_OPAS/{i}.png')
+    imgs.append(img)
+    img_array = np.array(img)
     avg = np.average(img_array)
     #for row in img_array:
     #    print(' '.join(map(str, row)))
@@ -24,7 +28,11 @@ sorted_OPAS = []
 
 for i in range(len(sorted_vals_indexes)):
     sorted_OPAS.append(OPAS[sorted_vals_indexes[i]])
-    print(f"{i} -> {sorted_vals_indexes[i]}")
+
+os.system('del new_OPAS')
+os.system('mkdir new_OPAS')
+for i in range(92):
+    imgs[i].save(f'./new_OPAS/{sorted_OPAS.index(OPAS[i])}.png')
 
 print()
 print("".join(sorted_OPAS))
