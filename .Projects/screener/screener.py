@@ -55,11 +55,19 @@ class CharacterMap:
         if first_rows is None:
             first_rows = 0
         if last_rows is None:
+<<<<<<< HEAD
             last_rows = array.shape[0] - 1
         if first_columns is None:
             first_columns = 0
         if last_columns is None:
             last_columns = array.shape[1] - 1
+=======
+            last_rows = self.array.shape[0] - 1
+        if first_columns is None:
+            first_columns = 0
+        if last_columns is None:
+            last_columns = self.array.shape[1] - 1
+>>>>>>> 38f9d1b17595c6563364c18dc65e6d9092d7c695
 
         if first_rows < 0 or last_rows >= self.array.shape[0] or first_columns < 0 or last_columns >= self.array.shape[1]:
             raise IndexError("Indices are out of bounds.")
@@ -82,7 +90,6 @@ class TerminalDisplay:
         stdout.write("\033[?25l")
         stdout.write("\033[" + self.clear_height_str + "A")
         stdout.write("\033[2K")
-        #stdout.write("\033[2J")
     
     def clear(self):
         os.system('cls')
@@ -223,7 +230,11 @@ if __name__ == "__main__":
 
     display_width, display_height = get_terminal_display_size()
 
+<<<<<<< HEAD
     display_map = CharacterMap(display_width, display_height, filler="-")
+=======
+    display_map = CharacterMap(display_width, display_height, filler=" ")
+>>>>>>> 38f9d1b17595c6563364c18dc65e6d9092d7c695
 
     terminal_display = TerminalDisplay(display_height)
 
@@ -243,9 +254,10 @@ if __name__ == "__main__":
     char_top_left_display_row = 4*display_height//10
     char_top_left_display_col = 4*display_width//10
 
-    for i in range(len(CHAR_LIST)):
+    for i in range(display_width+char_width+1):
         display_map.fill()
 
+<<<<<<< HEAD
         i_char_map = CHAR_IMAGES[CHAR_LIST[i]].to_map(char_width, char_height, grayed=True)
 
         print(i_char_map.array)
@@ -256,6 +268,17 @@ if __name__ == "__main__":
         terminal_display.update(display_map)
 
         wait_seconds(0.3)
+=======
+        i_char_map = CHAR_IMAGES["A"].to_map(char_width, char_height, grayed=True)
+
+        #print(i_char_map.array)
+
+        display_map.add_map(col=display_width-i, row=char_top_left_display_row, added_array=i_char_map.array)
+
+        terminal_display.update(display_map)
+
+        wait_seconds(0.01)
+>>>>>>> 38f9d1b17595c6563364c18dc65e6d9092d7c695
 
     #terminal_display.clear()
 
