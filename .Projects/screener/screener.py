@@ -224,14 +224,25 @@ def write_text(text="", char_width=None, char_height=None, char_top_left_corner_
         terminal_display.update(display_map, stay_seconds=stay_seconds)"""
         
 
-"""driver_initiate_threads.append(threading.Thread(target=save_driver_result, args=(initiate_driver_function, i)))
-    
-
-    for driver_initiate_thread in driver_initiate_threads:
-        driver_initiate_thread.start()
-
-    for driver_initiate_thread in driver_initiate_threads:
-        driver_initiate_thread.join()"""
+def write_szozat(text="", char_width=None, char_height=None, char_top_left_corner_row=0, stay_seconds=0, display_map=None, char_images=None):
+    verses = [
+        'Hazádnak rendületlenűl  Légy híve, oh magyar;  Bölcsőd az s majdan sírod is,  Mely ápol s eltakar.',
+        'A nagy világon e kivűl  Nincsen számodra hely;  Áldjon vagy verjen sors keze;  Itt élned, halnod kell.',
+        'Ez a föld, melyen annyiszor Apáid vére folyt; Ez, melyhez minden szent nevet Egy ezredév csatolt.',
+        'Itt küzdtenek honért a hős  Árpádnak hadai;  Itt törtek össze rabigát  Hunyadnak karjai.',
+        'Szabadság! itten hordozák  Véres zászlóidat,  S elhulltanak legjobbjaink  A hosszu harc alatt.',
+        'És annyi balszerencse közt,  Oly sok viszály után,  Megfogyva bár, de törve nem,  Él nemzet e hazán.',
+        'S népek hazája, nagy világ!  Hozzád bátran kiált:  ^Egy ezredévi szenvedés  Kér éltet vagy halált!^',
+        'Az nem lehet hogy annyi szív  Hiában onta vért,  S keservben annyi hű kebel  Szakadt meg a honért.',
+        'Az nem lehet, hogy ész, erő,  És oly szent akarat  Hiába sorvadozzanak  Egy átoksúly alatt.',
+        'Még jőni kell, még jőni fog  Egy jobb kor, mely után  Buzgó imádság epedez  Százezrek ajakán.',
+        'Vagy jőni fog, ha jőni kell,  A nagyszerű halál,  Hol a temetkezés fölött  Egy ország vérben áll.',
+        'S a sírt, hol nemzet sűlyed el,  Népek veszik körűl,  S az ember millióinak  Szemében gyászköny űl.',
+        'Légy híve rendületlenűl  Hazádnak, oh magyar:  Ez éltetőd, s ha elbukál,  Hantjával ez takar.',
+        'A nagy világon e kivűl  Nincsen számodra hely;  Áldjon vagy verjen sors keze:  Itt élned, halnod kell.',
+    ]
+    for verse in verses:
+        write_text(verse, None, char_height, char_top_left_corner_row, stay_seconds=0.007)
 
 
 
@@ -287,12 +298,11 @@ if __name__ == "__main__":
     terminal_display.update(display_map)
 
     #char_height = display_map.height//2
-    char_height = 32
+    char_height = 20
 
     char_top_left_corner_row = (display_map.height-char_height)//2
-    
-    write_text("Kérjük vigyázzanak, az ajtók záródnak.   Ez a 4-es metró Kelenföld felé.", None, char_height, char_top_left_corner_row, stay_seconds=0.015, display_map=display_map)
-    
+
+
     display_map.fill(' ')
     terminal_display.update(display_map)
 
