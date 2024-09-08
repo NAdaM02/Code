@@ -16,7 +16,7 @@ echo Pulling changes from the remote repository...
 git pull --tags origin main
 
 echo Pushing changes...
-git push --force --quiet
+git push --force
 
 echo.
 echo Upload successful.
