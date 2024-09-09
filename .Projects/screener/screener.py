@@ -188,12 +188,15 @@ def get_terminal_display_size():
     return width, height
 
 
-def render_char(char_width, step_count, char_maps, char_index):
-    char_col = display_map.width-step_count+char_width*char_index
-    if 0-char_width <= char_col <= display_map.width:
-        display_map.add_map(col=int(char_col), row=int(char_top_left_corner_row), added_array=char_maps[char_index].array)
+def render_char(char_width, char_col, char_map):
 
-def write_text(text="", char_width=None, char_height=None, char_top_left_corner_row=0, stay_seconds=0, display_map=None, char_images=None):
+    shown = 0-char_width <= char_col <= display_map.width
+    if shown:
+        display_map.add_map(col=int(char_col), row=int(char_top_left_corner_row), added_array=char_map.array)
+    
+    return shown
+
+def write_text(text="", char_width=None, char_height=None, char_top_left_corner_row=0, stay_seconds=0, display_map=None):
     if not char_height:  char_height = char_width//CHAR_IMAGE_RATIO
     if not char_width:  char_width = char_height*CHAR_IMAGE_RATIO
 
@@ -206,9 +209,17 @@ def write_text(text="", char_width=None, char_height=None, char_top_left_corner_
 
     for step_count in range(display_map.width + char_width*(text_char_count+1)):
         display_map.fill()
-        for char_index in range(text_char_count):
-            render_char(char_width, step_count, char_maps, char_index)
+        did_first = False
+        for char_index in range(step_count, text_char_count):
+            shown = render_char(char_width, display_map.width-step_count+char_width*char_index, char_maps[char_index])
+            if shown:
+                if not did_first:
+                    did_first = True
+            elif did_first:
+                break
+
         terminal_display.update(display_map, stay_seconds=stay_seconds)
+
     
     """char_render_threads = []
 
@@ -224,7 +235,7 @@ def write_text(text="", char_width=None, char_height=None, char_top_left_corner_
         terminal_display.update(display_map, stay_seconds=stay_seconds)"""
         
 
-def write_szozat(text="", char_width=None, char_height=None, char_top_left_corner_row=0, stay_seconds=0, display_map=None, char_images=None):
+def write_szozat(char_width=None, char_height=None, char_top_left_corner_row=0, stay_seconds=0, display_map=None):
     verses = [
         'Hazádnak rendületlenűl  Légy híve, oh magyar;  Bölcsőd az s majdan sírod is,  Mely ápol s eltakar.',
         'A nagy világon e kivűl  Nincsen számodra hely;  Áldjon vagy verjen sors keze;  Itt élned, halnod kell.',
@@ -241,8 +252,8 @@ def write_szozat(text="", char_width=None, char_height=None, char_top_left_corne
         'Légy híve rendületlenűl  Hazádnak, oh magyar:  Ez éltetőd, s ha elbukál,  Hantjával ez takar.',
         'A nagy világon e kivűl  Nincsen számodra hely;  Áldjon vagy verjen sors keze:  Itt élned, halnod kell.',
     ]
-    for verse in verses:
-        write_text(verse, None, char_height, char_top_left_corner_row, stay_seconds=0.007)
+    #for verse in verses: write_text(verse, char_width, char_height, char_top_left_corner_row, stay_seconds, display_map)
+    write_text("  |  ".join(verses), char_width, char_height, char_top_left_corner_row, stay_seconds=stay_seconds, display_map=display_map)
 
 
 
@@ -302,6 +313,7 @@ if __name__ == "__main__":
 
     char_top_left_corner_row = (display_map.height-char_height)//2
 
+    write_szozat(None, char_height, char_top_left_corner_row, 0.007, display_map)
 
     display_map.fill(' ')
     terminal_display.update(display_map)
