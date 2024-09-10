@@ -9,6 +9,8 @@ from sys import stdout
 from PIL import Image
 from threading import Thread
 
+DOT = (os.path.dirname(__file__)).replace('\\','/')
+
 
 
 class CharacterMap:
@@ -178,7 +180,9 @@ def flashScreen(display_map:CharacterMap, terminal_display:TerminalDisplay, spee
 
 def get_terminal_display_size():
     inp = input('input size coherent [11,14,19,28,56] or [16x9]:  ')
-    if ('x' not in inp) and ('*' not in inp):
+    if inp == '':
+        width, height = 95, 20
+    elif ('x' not in inp) and ('*' not in inp):
         x = int(inp) if inp != '' else 19
         width, height = x*16, x*9
     else:
@@ -207,16 +211,18 @@ def write_text(text="", char_width=None, char_height=None, char_row=0, stay_seco
 
     text_char_count = len(text)
 
-    for step_count in range(display_map.width + char_width*(text_char_count+1)):
+    chol_count = display_map.width + char_width*(text_char_count+1)
+    for step_count in range(chol_count):
         display_map.fill()
         did_first = False
-        for char_index in range(text_char_count):
+        start_char_index = step_count*text_char_count//chol_count
+        for char_index in range(start_char_index, start_char_index+display_map.width//char_width):
             shown = render_char(char_width, display_map.width - step_count + char_width*char_index, char_row, char_maps[char_index])
-            if shown:
+            """if shown:
                 if not did_first:
                     did_first = True
             elif did_first:
-                break
+                break"""
 
         terminal_display.update(display_map, stay_seconds=stay_seconds)
     """char_render_threads = []
@@ -281,7 +287,7 @@ CHAR_LIST = tuple("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345678
  
 CHAR_COUNT = len(CHAR_LIST)
 
-CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'./Data/Characters/{i}.png')) ) for i in range(len(CHAR_LIST))}
+CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'{DOT}/Data/Characters/{i}.png')) ) for i in range(len(CHAR_LIST))}
 
 CHAR_IMAGE_RATIO = 78/155
 
@@ -307,7 +313,7 @@ if __name__ == "__main__":
     terminal_display.update(display_map)
 
     #char_height = display_map.height//2
-    char_height = 20
+    char_height = display_map.height
 
     char_row = (display_map.height-char_height)//2
 
