@@ -211,19 +211,17 @@ def write_text(text="", char_width=None, char_height=None, char_row=0, stay_seco
 
     text_char_count = len(text)
 
+    render_char_count = display_map.width//char_width + 3
     chol_count = display_map.width + char_width*(text_char_count+1)
     for step_count in range(chol_count):
         display_map.fill()
-        did_first = False
-        start_char_index = step_count*text_char_count//chol_count
-        for char_index in range(start_char_index, start_char_index+display_map.width//char_width):
-            shown = render_char(char_width, display_map.width - step_count + char_width*char_index, char_row, char_maps[char_index])
-            """if shown:
-                if not did_first:
-                    did_first = True
-            elif did_first:
-                break"""
+        render_char_start_index = step_count*text_char_count
+        
+        print(render_char_start_index, render_char_count, step_count)
 
+        for char_index in range(int(render_char_start_index), int(render_char_start_index)+render_char_count):
+            render_char(char_width, display_map.width - step_count + char_width*char_index, char_row, char_maps[char_index])
+        
         terminal_display.update(display_map, stay_seconds=stay_seconds)
     """char_render_threads = []
 
