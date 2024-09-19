@@ -197,26 +197,28 @@ def write_text(text="", char_width=None, char_height=None, char_row=0, stay_seco
     text_char_count = len(text)
 
     render_char_count = display_map.width//char_width + 3
-    chol_count = display_map.width + char_width*(text_char_count+1)
-    for step_count in range(chol_count):
+    all_steps_count = display_map.width + char_width*(text_char_count+1)
+
+    for step_index in range(all_steps_count):
         display_map.fill()
-        render_char_start_index = int(step_count/chol_count*text_char_count)
+        render_char_start_index = int(step_index/all_steps_count*text_char_count)
         
-        print(render_char_start_index, render_char_count, step_count)
+        print(render_char_start_index, render_char_count, step_index)
 
         for char_index in range(int(render_char_start_index), int(render_char_start_index)+render_char_count):
             try:
-                render_char(char_width, display_map.width - step_count + char_width*char_index, char_row, char_maps[char_index])
+                render_char(char_width, display_map.width - step_index + char_width*char_index, char_row, char_maps[char_index])
             except:
                 display_map.fill("!")
         
         terminal_display.update(display_map, stay_seconds=stay_seconds)
+    
     """char_render_threads = []
 
-    for step_count in range(display_map.width + char_width*(text_char_count+1)):
+    for step_index in range(display_map.width + char_width*(text_char_count+1)):
         display_map.fill()
         for char_index in range(text_char_count):
-            char_render_thread = Thread(target=render_char, args=(char_width, step_count, char_maps, char_index))
+            char_render_thread = Thread(target=render_char, args=(char_width, step_index, char_maps, char_index))
             char_render_threads.append(char_render_thread)
             char_render_thread.start()
         for running_char_render_thread in char_render_threads:
