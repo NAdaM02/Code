@@ -1,4 +1,5 @@
-from time import time as now
+from time import time as now_in_seconds
+from time import perf_counter as precise_time
 from time import sleep as wait_seconds
 import colorama
 import os
@@ -11,6 +12,14 @@ from threading import Thread
 
 DOT = (os.path.dirname(__file__)).replace('\\','/')
 
+
+def print_separated(val_1, space_between, val_2):
+    val_1_string = str(val_1)
+    val_1_len = len(val_1_string)
+
+    val_2_string = str(val_2)
+
+    stdout.write(val_1_string + space_between[val_1_len : ] + val_2_string)
 
 
 class CharacterMap:
@@ -97,7 +106,10 @@ class TerminalDisplay:
     def update(self, display_map:CharacterMap, stay_seconds:int=None):
         self.write(display_map)
 
-        if stay_seconds: wait_seconds(stay_seconds)
+        if stay_seconds:
+            start_time = precise_time() 
+            while precise_time() - start_time < stay_seconds :
+                pass
 
 
 class CustomImage:
@@ -201,9 +213,9 @@ def write_text(text="", char_width=None, char_height=None, char_row=0, stay_seco
 
     for step_index in range(all_steps_count):
         display_map.fill()
-        render_char_start_index = int(step_index/all_steps_count*text_char_count)
+        render_char_start_index = max(round(step_index/all_steps_count*text_char_count) - render_char_count+1, 0)
         
-        print(render_char_start_index, render_char_count, step_index)
+        print_separated(render_char_start_index, "    - ", render_char_start_index+render_char_count)
 
         for char_index in range(int(render_char_start_index), int(render_char_start_index)+render_char_count):
             try:
@@ -307,7 +319,7 @@ if __name__ == "__main__":
     char_row = (display_map.height-char_height)//2
 
     #write_text('abc', None, char_height, char_row, 0.007)
-    write_szozat(None, char_height, char_row, 0.007)
+    write_szozat(None, char_height, char_row, 0.2)
 
     display_map.fill(' ')
     terminal_display.update(display_map)
