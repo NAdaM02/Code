@@ -9,7 +9,7 @@ def apply_antialiasing(img, factor=2):
     return img.resize((width, height), Image.LANCZOS)
 
 def convert_to_bw(input_path, threshold=80):
-    output_path = input_path.replace('.jpg', f' - {int(threshold*100)}.jpg')
+    output_path = input_path.replace('.jpg', f' - {round(threshold)}.jpg')
 
     threshold /= 100
 
