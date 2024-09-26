@@ -189,17 +189,17 @@ def get_terminal_display_size():
     
     return width, height
 
-def render_char(char_width, char_col, char_row, char_map):
+def render_char(char_width, char_height, char_col, char_row, char_map):
 
-    shown = 0-char_width <= char_col <= display_map.width
+    shown = (0-char_width <= char_col <= display_map.width) and (0-char_height <= char_row <= display_map.height)
     if shown:
         display_map.add_map(col=int(char_col), row=int(char_row), added_array=char_map.array)
     
     return shown
 
 def write_text(text="", char_width=None, char_height=None, char_row=0, stay_seconds=0):
-    if not char_height:  char_height = char_width//CHAR_IMAGE_RATIO
-    if not char_width:  char_width = char_height*CHAR_IMAGE_RATIO
+    if not char_height:  char_height = char_width//CHAR_WIDTH_PER_HEIGHT
+    if not char_width:  char_width = char_height*CHAR_WIDTH_PER_HEIGHT
 
     char_width = int(char_width);  char_height = int(char_height)
 
@@ -213,24 +213,25 @@ def write_text(text="", char_width=None, char_height=None, char_row=0, stay_seco
 
     for step_index in range(all_steps_count):
         display_map.fill()
-        render_char_start_index = max(round(step_index/all_steps_count*text_char_count) - render_char_count+1, 0)
-        
-        print_separated(render_char_start_index, "    - ", render_char_start_index+render_char_count)
+        render_char_start_index = max(0, int(step_index/char_width) - render_char_count+1)
+        render_char_end_index = min(render_char_start_index + render_char_count, text_char_count)
 
-        for char_index in range(int(render_char_start_index), int(render_char_start_index)+render_char_count):
+        for char_index in range( render_char_start_index, render_char_end_index ):
             try:
-                render_char(char_width, display_map.width - step_index + char_width*char_index, char_row, char_maps[char_index])
+                render_char(char_width, char_height, display_map.width - step_index + char_width*char_index, char_row, char_maps[char_index])
             except:
                 display_map.fill("!")
         
         terminal_display.update(display_map, stay_seconds=stay_seconds)
     
     """char_render_threads = []
-
-    for step_index in range(display_map.width + char_width*(text_char_count+1)):
+    for step_index in range(all_steps_count):
         display_map.fill()
-        for char_index in range(text_char_count):
-            char_render_thread = Thread(target=render_char, args=(char_width, step_index, char_maps, char_index))
+        render_char_start_index = max(0, int(step_index/char_width) - render_char_count+1)
+        render_char_end_index = min(render_char_start_index + render_char_count, text_char_count)
+
+        for char_index in range( render_char_start_index, render_char_end_index ):
+            char_render_thread = Thread(target=render_char, args=(char_width, display_map.width - step_index + char_width*char_index, char_row, char_maps[char_index]))
             char_render_threads.append(char_render_thread)
             char_render_thread.start()
         for running_char_render_thread in char_render_threads:
@@ -290,7 +291,7 @@ CHAR_COUNT = len(CHAR_LIST)
 CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'{DOT}/Data/Characters/{i}.png')) ) for i in range(len(CHAR_LIST))}
 
 
-CHAR_IMAGE_RATIO = 78/155
+CHAR_WIDTH_PER_HEIGHT = 78/155
 
 
 
@@ -300,7 +301,7 @@ if __name__ == "__main__":
 
     start_display_width, start_display_height = get_terminal_display_size()
 
-    display_map = CharacterMap(start_display_width, start_display_height, filler=".")
+    display_map = CharacterMap(start_display_width, start_display_height, filler=" ")
 
     terminal_display = TerminalDisplay(start_display_height)
 
@@ -314,12 +315,14 @@ if __name__ == "__main__":
     terminal_display.update(display_map)
 
     #char_height = display_map.height//2
-    char_height = display_map.height
+    #char_height = display_map.height
+    char_height=20
+    char_width=CHAR_WIDTH_PER_HEIGHT*char_height*2
 
     char_row = (display_map.height-char_height)//2
 
-    #write_text('abc', None, char_height, char_row, 0.007)
-    write_szozat(None, char_height, char_row, 0.2)
+    write_text('Vargasrákpenész vonatosat játszizik.', char_width, char_height, char_row, 0.005)
+    #write_szozat(None, char_height, char_row, 0.02)
 
     display_map.fill(' ')
     terminal_display.update(display_map)
