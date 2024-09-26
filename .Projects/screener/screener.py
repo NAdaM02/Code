@@ -179,7 +179,7 @@ def flashScreen(display_map:CharacterMap, terminal_display:TerminalDisplay, spee
 def get_terminal_display_size():
     inp = input('input size coherent [11,14,19,28,56] or [16x9]:  ')
     if inp == '':
-        width, height = 95, 20
+        width, height = 300, 40
     elif ('x' not in inp) and ('*' not in inp):
         x = int(inp)
         width, height = x*16, x*9
@@ -272,8 +272,8 @@ if False:
     #OPAS51 = tuple(" .`',-:;il!><xrsahkmoqwzvuyntjf0147235689bpdgq#$%&@█")
     #OPAS64 = tuple(" .`',-~:;_\"^!/|\\(){}[]<>*il?1jtrxzcvunyfLITFJCoaesmkdqbphwO08#$%&@█")
     #OPAS70 = tuple(" .'`^\",:;Il!i><~+_-?][}{1)(|\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$")
-OPAS92 = tuple(" .`':,_-;^!<+>=/*?|vLclTxY()r1iz{}tnsJjfCuo7FI][e3aVX2yZShk4AUPw5bqK96dEmpHG%O#D80R&gN$BMQW@")
-OPAS = OPAS92
+    #OPAS92 = tuple(" .`':,_-;^!<+>=/*?|vLclTxY()r1iz{}tnsJjfCuo7FI][e3aVX2yZShk4AUPw5bqK96dEmpHG%O#D80R&gN$BMQW@")
+OPAS = tuple(" .`':,_-;^!<+>=/*?|vLclTxY()r1iz{}tnsJjfCuo7FI][e3aVX2yZShk4AUPw5bqK96dEmpHG%O#D80R&gN$BMQW@")
 
 if False:
     pass
@@ -316,12 +316,13 @@ if __name__ == "__main__":
 
     #char_height = display_map.height//2
     #char_height = display_map.height
-    char_height=20
-    char_width=CHAR_WIDTH_PER_HEIGHT*char_height*2
+    char_height=40
+    char_width=CHAR_WIDTH_PER_HEIGHT*char_height*1
+    #char_width = display_map.width
 
     char_row = (display_map.height-char_height)//2
 
-    write_text('Vargasrákpenész vonatosat játszizik.', char_width, char_height, char_row, 0.005)
+    write_text('Erm.. what da sigma?', char_width, char_height, char_row, 0.001)
     #write_szozat(None, char_height, char_row, 0.02)
 
     display_map.fill(' ')
