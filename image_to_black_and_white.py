@@ -3,28 +3,22 @@ from PIL import Image
 
 def apply_antialiasing(img, factor=2):
     width, height = img.size
-    
     img = img.resize((width * factor, height * factor), Image.LANCZOS)
-    
     return img.resize((width, height), Image.LANCZOS)
 
 def convert_to_bw(input_path, threshold=80):
-    output_path = input_path.replace('.jpg', f' - {int(threshold*100)}.jpg')
-
-    threshold /= 100
-
+    output_path = input_path.replace('.jpg', f' - {round(threshold)}.jpg')
+    threshold = 1 - threshold/100
     img = Image.open(input_path)
     
-    img = apply_antialiasing(img)
+    #img = apply_antialiasing(img)
     
     img_gray = img.convert('L')
-    
     img_array = np.array(img_gray)
 
     img_normalized = img_array / 255.0
 
     img_bw = (img_normalized > threshold).astype(np.uint8) * 255
-    
     output_img = Image.fromarray(img_bw, mode='L')
     
     output_img.save(output_path)
