@@ -104,24 +104,31 @@ class TerminalDisplay:
         stdout.flush()
     
     def update(self, display_map:CharacterMap, stay_seconds:int=None):
-        self.write(display_map)
-
         if stay_seconds:
-            start_time = precise_time() 
+            start_time = precise_time()
+
+            self.write(display_map)
+
             while precise_time() - start_time < stay_seconds :
                 pass
+        else:
+            self.write(display_map)
 
 
 class CustomImage:
-    def __init__(self, image_array=np.array([])):
+    def __init__(self, image_array=np.array([]), character=None):
         self.array = image_array
+        self.char = character
 
     def gray(self):
         self.array = cv2.cvtColor(np.array(self.array), cv2.COLOR_RGB2GRAY)
         return self
 
     def downscale(self, target_width, target_height):
-        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_AREA)
+        if target_width == 1 and target_height == 1:
+            self.array = np.array(np.array(self.char))
+        else:
+            self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_AREA)
         return self
 
     def be_screenshot(self):
@@ -138,7 +145,7 @@ class CustomImage:
     def to_map(self, target_width=-1, target_height=-1, grayed=False, sized=False):
         if not grayed: self.gray()
         if not sized: self.downscale(target_width, target_height)
-    
+
         indices = np.digitize(self.array, THRESHOLDS)
         img_map = CharacterMap(width=target_width, height=target_height)
         img_map.array[:] = np.array(OPAS)[indices]
@@ -288,11 +295,10 @@ CHAR_LIST = tuple("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345678
  
 CHAR_COUNT = len(CHAR_LIST)
 
-CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'{DOT}/Data/Characters/{i}.png')) ) for i in range(len(CHAR_LIST))}
+CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'{DOT}/Data/Characters/{i}.png')), CHAR_LIST[i] ) for i in range(CHAR_COUNT)}
 
 
 CHAR_WIDTH_PER_HEIGHT = 78/155
-
 
 
 if __name__ == "__main__":
@@ -313,17 +319,13 @@ if __name__ == "__main__":
 
 
     terminal_display.update(display_map)
-
-    #char_height = display_map.height//2
-    #char_height = display_map.height
-    char_height=40
-    char_width=CHAR_WIDTH_PER_HEIGHT*char_height*1
-    #char_width = display_map.width
+    
+    char_width, char_height = 20, 30
 
     char_row = (display_map.height-char_height)//2
 
-    write_text('Erm.. what da sigma?', char_width, char_height, char_row, 0.001)
-    #write_szozat(None, char_height, char_row, 0.02)
+    write_text('This is TEXT written by TEXT in terminal.', char_width, char_height, char_row, 0.001*3/4)
+    #write_szozat(char_width, char_height, char_row, 0.001)
 
     display_map.fill(' ')
     terminal_display.update(display_map)
