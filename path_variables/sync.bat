@@ -33,4 +33,4 @@ echo.
 echo Syncing finished.
 echo.
 
-cd %call_dir%
+cd %call_dir% > nul
