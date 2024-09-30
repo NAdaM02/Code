@@ -9,7 +9,7 @@ cd %REPO_PATH%
 echo Pushing at %REPO_PATH%
 echo.
 
-git checkout main > nul
+git checkout main
 
 git push
 

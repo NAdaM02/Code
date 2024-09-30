@@ -9,7 +9,7 @@ cd %REPO_PATH%
 echo Pulling at %REPO_PATH%
 echo.
 
-git checkout main > nul
+git checkout main
 
 git pull
 

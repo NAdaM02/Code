@@ -9,7 +9,7 @@ cd %REPO_PATH%
 echo Commiting at %REPO_PATH%
 echo.
 
-git checkout main > nul
+git checkout main
 
 set /p COMMIT_MSG="commit message: "
 echo.
