@@ -9,6 +9,7 @@ cd %REPO_PATH%
 echo Syncing at %REPO_PATH%
 echo.
 
+
 git checkout main
 
 git add .
