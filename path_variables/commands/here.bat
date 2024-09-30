@@ -12,6 +12,4 @@ echo      %DATE%
 echo ............
 echo.
 
-echo function global:prompt { $prompting = ""; $path = (Get-Location).Path.Replace($env:USERPROFILE, '~'); return "$prompting$path> "; } > "%temp%\prompt.ps1"
-
-pwsh -noexit -Command "& \"%temp%\prompt.ps1\"; $host.UI.RawUI.WindowTitle = 'Terminal @ %CD%'"
+pwsh7 -noexit -Command "& \"%temp%\prompt.ps1\"; $host.UI.RawUI.WindowTitle = 'Terminal @ %CD%'"
