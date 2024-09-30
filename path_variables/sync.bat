@@ -1,10 +1,13 @@
 @echo off
 
+set call_dir = %cd%
+
 for /f "delims=" %%i in ('git rev-parse --show-toplevel') do set REPO_PATH=%%i
 
 cd %REPO_PATH%
 
-echo IN %REPO_PATH%
+echo Syncing at %REPO_PATH%
+echo.
 
 git checkout main
 
@@ -17,15 +20,16 @@ set "COMMIT_MSG=%DATE% - %COMMIT_MSG%"
 
 git commit -m "%COMMIT_MSG%"
 
-echo Pulling changes from the remote repository...
+echo.
+echo PULL-ing changes...
 git pull
 
-echo Pushing changes...
+echo.
+echo PUSH-ing changes...
 git push
 
 echo.
-echo Upload successful.
+echo Syncing finished.
+echo.
 
-TIMEOUT /T 1 > nul
-
-exit
+cd %call_dir%
