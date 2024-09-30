@@ -10,7 +10,7 @@ echo Syncing at %REPO_PATH%
 echo.
 
 
-git checkout main
+git checkout main > nul
 
 git add .
 

@@ -9,7 +9,7 @@ cd %REPO_PATH%
 echo Adding all to %REPO_PATH%
 echo.
 
-git checkout main
+git checkout main > nul
 
 git add *
 

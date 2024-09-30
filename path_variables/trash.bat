@@ -6,15 +6,19 @@ for /f "delims=" %%i in ('git rev-parse --show-toplevel') do set REPO_PATH=%%i
 
 cd %REPO_PATH%
 
-echo Pushing at %REPO_PATH%
+echo Trashing and pulling %REPO_PATH%
 echo.
 
-git checkout main > nul
+git checkout -- .
 
-git push
+git fetch origin
+
+git reset --hard origin/main
+
+git clean -fd
 
 echo.
-echo Pushing finished.
+echo Pulling finished.
 echo.
 
 cd %call_dir% > nul
