@@ -15,6 +15,8 @@ git reset --hard origin/main
 
 git clean -fd
 
+git pull
+
 echo.
 echo Trashing and Pulling finished.
 echo.
