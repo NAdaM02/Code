@@ -27,7 +27,7 @@ git pull
 
 echo.
 echo PUSH-ing changes...
-git push
+git push > nul
 
 echo.
 echo Syncing finished.

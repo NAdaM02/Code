@@ -11,7 +11,7 @@ echo.
 
 git checkout main
 
-git push
+git push > nul
 
 echo.
 echo Pushing finished.
