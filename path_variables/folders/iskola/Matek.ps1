@@ -1,1 +1,2 @@
-Set-Location "C:\Users\adama\Iskola\2024-25\Matek"
+Set-Location "$env:USERPROFILE\Iskola\2024-25\Matek" 
+Write-Host "" 
