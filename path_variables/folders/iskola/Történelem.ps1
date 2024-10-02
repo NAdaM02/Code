@@ -1,2 +1,2 @@
-Set-Location "$env:USERPROFILE\Iskola\2024-25\T”rt‚nelem" 
+Set-Location "$env:USERPROFILE\Iskola\2024-25\TÃ¶rtÃ©nelem" 
 Write-Host "" 
