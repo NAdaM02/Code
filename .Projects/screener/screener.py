@@ -220,6 +220,7 @@ def write_text(text="", char_width=None, char_height=None, char_row=0, stay_seco
 
     for step_index in range(all_steps_count):
         display_map.fill()
+        
         render_char_start_index = max(0, int(step_index/char_width) - render_char_count+1)
         render_char_end_index = min(render_char_start_index + render_char_count, text_char_count)
 
@@ -266,6 +267,10 @@ def write_szozat(char_width=None, char_height=None, char_row=0, stay_seconds=0):
     ]
     #for verse in verses: write_text(verse, char_width, char_height, char_row, stay_seconds)
     write_text("  /  ".join(verses), char_width, char_height, char_row, stay_seconds=stay_seconds)
+
+def get_screen_map():
+    display_map = CustomImage().be_screenshot().array
+    terminal_display.update(display_map)
 
 
 
@@ -320,16 +325,28 @@ if __name__ == "__main__":
 
     terminal_display.update(display_map)
     
-    char_width, char_height = 20, 30
+    """char_width, char_height = 20, 30
 
     char_row = (display_map.height-char_height)//2
-
-    write_text('This is TEXT written by TEXT in terminal.', char_width, char_height, char_row, 0.001*3/4)
+    
+    write_text('Szia Viktora!', char_width, char_height, char_row, 0.001*20/4)
     #write_szozat(char_width, char_height, char_row, 0.001)
 
     display_map.fill(' ')
-    terminal_display.update(display_map)
+    terminal_display.update(display_map)"""
 
+    """while True:
+        screen_thread = Thread(target=update_display_as_screen)
+        text_thread = Thread(target=write_text, args=('This is TEXT written by TEXT in terminal.', char_width, char_height, char_row, 0.001*20/4))
+
+        screen_thread.start()
+        text_thread.start()
+        
+
+        terminal_display.update(display_map, stay_seconds=stay_seconds)"""
+    
+    while True:
+        pass
 
 
     print(colorama.Style.RESET_ALL)  # Reset terminal formatting
