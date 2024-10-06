@@ -325,28 +325,15 @@ if __name__ == "__main__":
 
     terminal_display.update(display_map)
     
-    """char_width, char_height = 20, 30
+    char_width, char_height = 20, 30
 
     char_row = (display_map.height-char_height)//2
     
-    write_text('Szia Viktora!', char_width, char_height, char_row, 0.001*20/4)
+    write_text('911 was an inside job...', char_width, char_height, char_row, 0.001*20/4)
     #write_szozat(char_width, char_height, char_row, 0.001)
 
     display_map.fill(' ')
-    terminal_display.update(display_map)"""
-
-    """while True:
-        screen_thread = Thread(target=update_display_as_screen)
-        text_thread = Thread(target=write_text, args=('This is TEXT written by TEXT in terminal.', char_width, char_height, char_row, 0.001*20/4))
-
-        screen_thread.start()
-        text_thread.start()
-        
-
-        terminal_display.update(display_map, stay_seconds=stay_seconds)"""
-    
-    while True:
-        pass
+    terminal_display.update(display_map)
 
 
     print(colorama.Style.RESET_ALL)  # Reset terminal formatting

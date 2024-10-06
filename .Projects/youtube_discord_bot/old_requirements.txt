@@ -1,7 +1,0 @@
-discord.py
-urllib3
-requests
-BeautifulSoup4
-selenium
-pynacl
-youtube_dl
