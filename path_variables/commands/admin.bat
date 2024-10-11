@@ -23,5 +23,5 @@ echo      %DATE%
 echo ............
 echo.
 
-echo function global:prompt { $prompting = ""; $path = (Get-Location).Path.Replace($env:USERPROFILE, '~'); return "$prompting$path> "; } > "%temp%\prompt.ps1"
-pwsh -NoExit -Command "$host.UI.RawUI.WindowTitle = 'Admin @ %CD%'; . '%temp%\prompt.ps1'"
+
+pwsh -NoExit -Command "here.bat"
