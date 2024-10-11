@@ -12,4 +12,4 @@ echo      %DATE%
 echo ............
 echo.
 
-pwsh -noexit -Command "& ".\prompt.ps1\"; $host.UI.RawUI.WindowTitle = 'Terminal @ %CD%'"
+pwsh -noexit -Command "& \"prompt.ps1\"; $host.UI.RawUI.WindowTitle = 'Terminal @ %CD%'"
