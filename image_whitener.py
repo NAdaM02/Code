@@ -26,6 +26,21 @@ def convert_near_white_to_white(input_path, threshold=80):
     output_img.save(output_path)
     print(f"Modified image saved as {output_path}")
 
-input_image = input('Image to modify path: ')
-threshold = int(input('Give threshold [0-100]: '))
-convert_near_white_to_white(input_image, threshold)
+input_image = input('image to convert path: ')
+threshold_input = input('Give threshold [0-100]: ')
+while threshold_input != "":
+
+    input_is_correct = False
+    while not input_is_correct:
+        try:
+            threshold = int(threshold_input)
+            input_is_correct = True
+
+        except:
+            print("\nInput error. Try again.\n")
+            threshold_input = input('Give threshold [0-100]: ')
+
+
+    convert_near_white_to_white(input_image, threshold)
+
+    threshold_input = int(input('Give threshold [0-100]: '))
