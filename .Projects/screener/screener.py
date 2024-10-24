@@ -62,7 +62,7 @@ class CharacterMap:
 
         return self.array[first_rows:last_rows+1, first_columns:last_columns+1]
 
-    def add_map(self, row, col, added_array, exclude_chars:tuple=(" ",)):
+    def add_map(self, row, col, added_array, exclude_chars:tuple):
         height, width = self.array.shape
         added_height, added_width = added_array.shape
 
@@ -200,7 +200,7 @@ def render_char(char_width, char_height, char_col, char_row, char_map):
 
     shown = (0-char_width <= char_col <= display_map.width) and (0-char_height <= char_row <= display_map.height)
     if shown:
-        display_map.add_map(col=int(char_col), row=int(char_row), added_array=char_map.array)
+        display_map.add_map(col=int(char_col), row=int(char_row), added_array=char_map.arra, exclude_chars=(" "))
     
     return shown
 
@@ -272,6 +272,30 @@ def get_screen_map():
     display_map = CustomImage().be_screenshot().array
     terminal_display.update(display_map)
 
+def make_axis(width, height):
+    3+4*c
+    axis_map = CharacterMap(width=width, height=height)
+    for i in range(width):
+        char = ''
+        if i+1 % 3 == 0:
+            char = '+'
+        elif i ==
+        axis_map[height//2][i] = '-'
+
+
+def graph(f, test_range=(-2,2), step=0.5) -> CharacterMap:
+    can_graph_range = test_range[0] < test_range[1]
+
+    axis_width = 3+4*mark_count
+    axis_height = axis_width    # could change later
+
+    mark_count = (test_range[1]-test_range[0]) / step
+    make_axis(axis_width, axis_height)
+    
+    if not can_graph_range:
+        raise Exception("Range error.")
+    else:
+        make_axis()
 
 
 if False:
@@ -329,11 +353,31 @@ if __name__ == "__main__":
 
     char_row = (display_map.height-char_height)//2
     
-    write_text('911 was an inside job...', char_width, char_height, char_row, 0.001*20/4)
+    #+write_text('911 was an inside job...', char_width, char_height, char_row, 0.001*20/4)
     #write_szozat(char_width, char_height, char_row, 0.001)
 
-    display_map.fill(' ')
+    display_map.array[2][5] = "5"
+    display_map.array[2][6] = "6"
+    display_map.array[display_map.height//2][:] = '-'
+    display_map.array[3][2] = "-"
+    display_map.array[3][3] = "-"
+    display_map.array[3][4] = "+"
+    display_map.array[3][5] = "-"
+    display_map.array[3][6] = "-"
+    display_map.array[3][7] = "-"
+    display_map.array[3][8] = "+"
+    display_map.array[3][9] = "-"
+    display_map.array[3][10] = "-"
+    display_map.array[3][11] = "-"
+    display_map.array[3][12] = "+"
+    display_map.array[3][12] = "-"
+    display_map.array[3][12] = "-"
+    display_map.array[3][12] = ">"
+
     terminal_display.update(display_map)
+
+    """display_map.fill(' ')
+    terminal_display.update(display_map)"""
 
 
     print(colorama.Style.RESET_ALL)  # Reset terminal formatting
