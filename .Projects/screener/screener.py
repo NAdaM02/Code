@@ -272,7 +272,7 @@ def get_screen_map():
     display_map = CustomImage().be_screenshot().array
     terminal_display.update(display_map)
 
-def make_axis(mark_counts=(5,3), marking_spaces=(2,2)):
+def make_axis(mark_counts:tuple=(5,5), marking_spaces:tuple=(3,3)):
     mark_count = {'x':mark_counts[0], 'y':mark_counts[1]}
     marking_space = {'x':marking_spaces[0], 'y':marking_spaces[1]}
 
@@ -362,7 +362,7 @@ if __name__ == "__main__":
     #+write_text('911 was an inside job...', char_width, char_height, char_row, 0.001*20/4)
     #write_szozat(char_width, char_height, char_row, 0.001)
     
-    display_map = make_axis()
+    display_map = make_axis(mark_counts=(11,11), marking_spaces=(5,3))
 
     terminal_display.update(display_map)
 
