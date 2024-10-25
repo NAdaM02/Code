@@ -282,7 +282,7 @@ def make_axis(mark_counts=(5,3), marking_spaces=(2,2)):
     axis_map = CharacterMap(width=width, height=height)
     
     char = ''
-    
+
     for i in range(width):
         if i == width-1 :
             char = '🡢'
@@ -361,25 +361,7 @@ if __name__ == "__main__":
     
     #+write_text('911 was an inside job...', char_width, char_height, char_row, 0.001*20/4)
     #write_szozat(char_width, char_height, char_row, 0.001)
-
-    """display_map.array[2][5] = "5"
-    display_map.array[2][6] = "6"
-    display_map.array[display_map.height//2][:] = '-'
-    display_map.array[3][2] = "-"
-    display_map.array[3][3] = "-"
-    display_map.array[3][4] = "+"
-    display_map.array[3][5] = "-"
-    display_map.array[3][6] = "-"
-    display_map.array[3][7] = "-"
-    display_map.array[3][8] = "+"
-    display_map.array[3][9] = "-"
-    display_map.array[3][10] = "-"
-    display_map.array[3][11] = "-"
-    display_map.array[3][12] = "+"
-    display_map.array[3][12] = "-"
-    display_map.array[3][12] = "-"
-    display_map.array[3][12] = ">"
-    """
+    
     display_map = make_axis()
 
     terminal_display.update(display_map)
