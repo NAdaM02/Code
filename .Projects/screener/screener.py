@@ -294,7 +294,7 @@ def make_axis(mark_counts=(3,3), marking_space=3):
             char = '↑'
             axis_map.array[0][y_axis_col-1] = 'y'
         elif (i+2) % (marking_space+1) == 0:
-            char = '+'
+            char = '✛'
         else:
             char = '〡'
         axis_map.array[height-i-1][y_axis_col] = char
