@@ -280,18 +280,18 @@ def make_axis(mark_counts=(3,3), marking_space=3):
     char = ''
     for i in range(width):
         if i == width-1 :
-            char = '→'
+            char = '🡢'
             axis_map.array[height//2+1][-1] = 'x'
         elif (i+2) % (marking_space+1) == 0:
-            char = '+'
+            char = '✛'
         else:
             char = '─'
         axis_map.array[height//2][i] = char
     
     y_axis_col = (mark_count['x']//2 + 1)*(marking_space+1)-2
     for i in range(height):
-        if i == width-1 :
-            char = '↑'
+        if i == height-1 :
+            char = '🡡'
             axis_map.array[0][y_axis_col-1] = 'y'
         elif (i+2) % (marking_space+1) == 0:
             char = '✛'
@@ -305,11 +305,8 @@ def make_axis(mark_counts=(3,3), marking_space=3):
 def graph(f, test_range=(-2,2), step=0.5) -> CharacterMap:
     can_graph_range = test_range[0] < test_range[1]
 
-    axis_width = 3+4*mark_count
-    axis_height = axis_width    # could change later
-
     mark_count = (test_range[1]-test_range[0]) / step
-    make_axis(axis_width, axis_height)
+    make_axis()
     
     if not can_graph_range:
         raise Exception("Range error.")
@@ -378,7 +375,7 @@ if __name__ == "__main__":
     display_map.array[3][12] = "-"
     display_map.array[3][12] = ">"
     """
-    display_map = make_axis()
+    display_map = make_axis((5,3),4)
 
     terminal_display.update(display_map)
 
