@@ -272,32 +272,33 @@ def get_screen_map():
     display_map = CustomImage().be_screenshot().array
     terminal_display.update(display_map)
 
-def make_axis(mark_counts=(3,3), marking_spaces=(4,4)):
+def make_axis(mark_counts=(5,3), marking_spaces=(2,2)):
     mark_count = {'x':mark_counts[0], 'y':mark_counts[1]}
     marking_space = {'x':marking_spaces[0], 'y':marking_spaces[1]}
 
-    width = 2+(marking_space['x']+1)*mark_count['x']
-    height =  2+(marking_space['y']+1)*mark_count['y']
+    width = (marking_space['x']+1)*(mark_count['x']-1) + 5
+    height =  (marking_space['y']+1)*(mark_count['y']-1) + 5
 
     axis_map = CharacterMap(width=width, height=height)
     
     char = ''
+    
     for i in range(width):
         if i == width-1 :
             char = '🡢'
             axis_map.array[height//2+1][-1] = 'x'
-        elif (i+2) % (marking_space['x']+1) == 0:
+        elif (i-2) % (marking_space['x']+1) == 0:
             char = '✛'
         else:
             char = '─'
         axis_map.array[height//2][i] = char
     
-    y_axis_col = (mark_count['x']//2 + 1)*(marking_space['x']+1)-2
-    for i in range(height-1, -1, -1):
+    y_axis_col = (mark_count['x']//2)*(marking_space['x']+1)+2
+    for i in range(height):
         if i == 0 :
             char = '🡡'
             axis_map.array[0][y_axis_col-1] = 'y'
-        elif (i+2) % (marking_space['y']+1) == 0:
+        elif (i-2) % (marking_space['y']+1) == 0:
             char = '✛'
         else:
             char = '〡'
