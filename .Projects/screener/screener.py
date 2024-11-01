@@ -13,7 +13,7 @@ from threading import Thread
 DOT = (os.path.dirname(__file__)).replace('\\','/')
 
 
-def print_separated(val_1, space_between, val_2):
+def print_separated(val_1, space_between:str, val_2):
     val_1_string = str(val_1)
     val_1_len = len(val_1_string)
 
@@ -23,7 +23,7 @@ def print_separated(val_1, space_between, val_2):
 
 
 class CharacterMap:
-    def __init__(self, width, height, d_list=None, filler=' '): 
+    def __init__(self, width:int, height:int, d_list:tuple=None, filler:str=' '): 
         if d_list:
             self.width = len(d_list[0])
             self.height = len(d_list)
@@ -47,7 +47,7 @@ class CharacterMap:
         self.array = np.full(((self.height, self.width)), filler, dtype='<U1')
         return self.array
     
-    def get_subarray(self, first_rows:int= None, last_rows:int= None, first_columns: int = None, last_columns: int = None):
+    def get_subarray(self, first_rows:int= None, last_rows:int= None, first_columns:int= None, last_columns:int= None):
         if first_rows is None:
             first_rows = 0
         if last_rows is None:
@@ -62,7 +62,7 @@ class CharacterMap:
 
         return self.array[first_rows:last_rows+1, first_columns:last_columns+1]
 
-    def add_map(self, row, col, added_array, exclude_chars:tuple):
+    def add_map_array(self, row:int, col:int, added_array:np.array, exclude_chars:tuple):
         height, width = self.array.shape
         added_height, added_width = added_array.shape
 
@@ -82,7 +82,7 @@ class CharacterMap:
 
 
 class TerminalDisplay:
-    def __init__(self, height=512):
+    def __init__(self, height:int=512):
         self.height = height
         self.clear_height = height+2
         self.clear_height_str = str(height+2)
@@ -103,7 +103,7 @@ class TerminalDisplay:
         stdout.write(output)
         stdout.flush()
     
-    def update(self, display_map:CharacterMap, stay_seconds:int=None):
+    def update(self, display_map:CharacterMap, stay_seconds:float=None):
         if stay_seconds:
             start_time = precise_time()
 
@@ -116,7 +116,7 @@ class TerminalDisplay:
 
 
 class CustomImage:
-    def __init__(self, image_array=np.array([]), character=None):
+    def __init__(self, image_array=np.array([]), character:str=None):
         self.array = image_array
         self.char = character
 
@@ -124,7 +124,7 @@ class CustomImage:
         self.array = cv2.cvtColor(np.array(self.array), cv2.COLOR_RGB2GRAY)
         return self
 
-    def downscale(self, target_width, target_height):
+    def downscale(self, target_width:int, target_height:int):
         if target_width == 1 and target_height == 1:
             self.array = np.array(np.array(self.char))
         else:
@@ -157,7 +157,7 @@ class Monitor:
     def __init__(self):
         pass
 
-    def to_map(target_width, target_height):
+    def to_map(target_width:int, target_height:int):
         img = CustomImage()
         img.be_screenshot()
 
@@ -169,18 +169,6 @@ class Monitor:
         monitor_display_map.array[:] = np.array(OPAS)[indices]
         
         return monitor_display_map
-
-
-
-
-def flashScreen(display_map:CharacterMap, terminal_display:TerminalDisplay, speed = 0.02):
-    global OPAS
-    for char in OPAS:
-        display_map.fill(char)
-        terminal_display.update(display_map, stay_seconds=speed)
-    for char in reversed(OPAS):
-        display_map.fill(char)
-        terminal_display.update(display_map, stay_seconds=speed)
 
 
 def get_terminal_display_size():
@@ -196,15 +184,26 @@ def get_terminal_display_size():
     
     return width, height
 
-def render_char(char_width, char_height, char_col, char_row, char_map):
 
+def flashScreen(display_map:CharacterMap, terminal_display:TerminalDisplay, speed:float = 0.02):
+    global OPAS
+    for char in OPAS:
+        display_map.fill(char)
+        terminal_display.update(display_map, stay_seconds=speed)
+    for char in reversed(OPAS):
+        display_map.fill(char)
+        terminal_display.update(display_map, stay_seconds=speed)
+
+
+def render_char(char_width:int, char_height:int, char_col:int, char_row:int, char_map:CharacterMap):
     shown = (0-char_width <= char_col <= display_map.width) and (0-char_height <= char_row <= display_map.height)
     if shown:
-        display_map.add_map(col=int(char_col), row=int(char_row), added_array=char_map.arra, exclude_chars=(" "))
+        display_map.add_map_array(col=int(char_col), row=int(char_row), added_array=char_map.array, exclude_chars=(" "))
     
     return shown
 
-def write_text(text="", char_width=None, char_height=None, char_row=0, stay_seconds=0):
+
+def write_text(text:str="", char_width:int=None, char_height:int=None, char_row:int=0, stay_seconds:float=0):
     if not char_height:  char_height = char_width//CHAR_WIDTH_PER_HEIGHT
     if not char_width:  char_width = char_height*CHAR_WIDTH_PER_HEIGHT
 
@@ -231,24 +230,9 @@ def write_text(text="", char_width=None, char_height=None, char_row=0, stay_seco
                 display_map.fill("!")
         
         terminal_display.update(display_map, stay_seconds=stay_seconds)
-    
-    """char_render_threads = []
-    for step_index in range(all_steps_count):
-        display_map.fill()
-        render_char_start_index = max(0, int(step_index/char_width) - render_char_count+1)
-        render_char_end_index = min(render_char_start_index + render_char_count, text_char_count)
-
-        for char_index in range( render_char_start_index, render_char_end_index ):
-            char_render_thread = Thread(target=render_char, args=(char_width, display_map.width - step_index + char_width*char_index, char_row, char_maps[char_index]))
-            char_render_threads.append(char_render_thread)
-            char_render_thread.start()
-        for running_char_render_thread in char_render_threads:
-            running_char_render_thread.join()
-
-        terminal_display.update(display_map, stay_seconds=stay_seconds)"""
         
 
-def write_szozat(char_width=None, char_height=None, char_row=0, stay_seconds=0):
+def write_szozat(char_width:int=None, char_height:int=None, char_row:int=0, stay_seconds:float=0):
     verses = [
         'Hazádnak rendületlenűl  Légy híve, oh magyar;  Bölcsőd az s majdan sírod is,  Mely ápol s eltakar.',
         'A nagy világon e kivűl  Nincsen számodra hely;  Áldjon vagy verjen sors keze;  Itt élned, halnod kell.',
@@ -268,11 +252,13 @@ def write_szozat(char_width=None, char_height=None, char_row=0, stay_seconds=0):
     #for verse in verses: write_text(verse, char_width, char_height, char_row, stay_seconds)
     write_text("  /  ".join(verses), char_width, char_height, char_row, stay_seconds=stay_seconds)
 
+
 def get_screen_map():
     display_map = CustomImage().be_screenshot().array
     terminal_display.update(display_map)
 
-def make_axis(mark_counts:tuple=(5,5), marking_spaces:tuple=(3,3)):
+
+def make_axis(mark_counts:tuple=(5,5), marking_spaces:tuple=(3,3)) -> CharacterMap:
     mark_count = {'x':mark_counts[0], 'y':mark_counts[1]}
     marking_space = {'x':marking_spaces[0], 'y':marking_spaces[1]}
 
@@ -285,38 +271,61 @@ def make_axis(mark_counts:tuple=(5,5), marking_spaces:tuple=(3,3)):
 
     for i in range(width):
         if i == width-1 :
-            char = '🡢'
+            char = '>' # 🡢
             axis_map.array[height//2+1][-1] = 'x'
         elif (i-2) % (marking_space['x']+1) == 0:
-            char = '✛'
+            char = '+' # ✛
         else:
-            char = '─'
+            char = '-' # ─
         axis_map.array[height//2][i] = char
     
     y_axis_col = (mark_count['x']//2)*(marking_space['x']+1)+2
     for i in range(height):
         if i == 0 :
-            char = '🡡'
+            char = '^' # 🡡
             axis_map.array[0][y_axis_col-1] = 'y'
         elif (i-2) % (marking_space['y']+1) == 0:
-            char = '✛'
+            char = '+' # ✛
         else:
-            char = '〡'
+            char = '|' # 〡
         axis_map.array[i][y_axis_col] = char
     
     return axis_map
 
 
-def graph(f, test_range=(-2,2), step=0.5) -> CharacterMap:
-    can_graph_range = test_range[0] < test_range[1]
-
-    mark_count = (test_range[1]-test_range[0]) / step
-    make_axis()
+def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_range:tuple=(0., 0.), marker:str="×") -> CharacterMap:
+    x_range_size = x_range[1] - x_range[0]
     
-    if not can_graph_range:
-        raise Exception("Range error.")
-    else:
-        make_axis()
+    x_step = x_range_size / width
+    
+    marks_map = CharacterMap(width, height)
+    test_vals = tuple(x_range[0]+i*x_step for i in range(0, width+1))
+
+    for c in range(width):
+        x = test_vals[c]
+
+        funct_x = funct(x)# + x_step/2
+        #funct_x -= funct_x%x_step
+
+        y = round((funct_x-y_range[0]) / (y_range[1]-y_range[0]) * (height))
+        
+        if y < height:
+            marks_map.array[height-y-1][c] = marker
+
+    return marks_map
+
+
+def make_graph(funct, width:int, height:int, x_range:tuple=(0.,0.), y_range:tuple=(0.,0.), mark_counts:tuple=(0,0), marker:str="×") -> CharacterMap:
+    marking_spaces = ((width-5)//mark_counts[0]-1, (height-5)//mark_counts[1]-1)
+    axis_map = make_axis(mark_counts, marking_spaces)
+
+    marks_map = get_graph_marks(funct, axis_map.width-4, axis_map.height-4, x_range, y_range, marker)
+
+    graph_map = axis_map
+
+    graph_map.add_map_array(2, 2, marks_map.array, (' '))
+    
+    return graph_map
 
 
 
@@ -338,36 +347,36 @@ CHAR_WIDTH_PER_HEIGHT = 78/155
 
 if __name__ == "__main__":
 
-    os.system('cls')
-
-    start_display_width, start_display_height = get_terminal_display_size()
-
-    display_map = CharacterMap(start_display_width, start_display_height, filler=" ")
-
-    terminal_display = TerminalDisplay(start_display_height)
-
-    monitor = Monitor
-
-
     colorama.init() # Initialize terminal formatting
 
 
+    os.system('cls')
 
-    terminal_display.update(display_map)
+    #start_display_width, start_display_height = get_terminal_display_size()
+
+    #display_map = CharacterMap(start_display_width, start_display_height, filler=" ")
+
+    #terminal_display = TerminalDisplay(start_display_height)
+
+    #monitor = Monitor()
+
+    #terminal_display.update(display_map)
     
-    char_width, char_height = 20, 30
+    #char_width, char_height = 20, 30
 
-    char_row = (display_map.height-char_height)//2
+    #char_row = (display_map.height-char_height)//2
     
     #+write_text('911 was an inside job...', char_width, char_height, char_row, 0.001*20/4)
     #write_szozat(char_width, char_height, char_row, 0.001)
+
     
-    display_map = make_axis(mark_counts=(11,11), marking_spaces=(5,3))
+    #graph_map = make_graph(lambda x: np.sin(x), width=120, height=30, x_range=(-10, 10), y_range=(-1, 1), mark_counts=(11, 3), marker="×")
 
-    terminal_display.update(display_map)
+    graph_map = get_graph_marks(lambda x: abs(x), 121, 31, (-10, 10), (-1, 1))
 
-    """display_map.fill(' ')
-    terminal_display.update(display_map)"""
+    terminal_display = TerminalDisplay(graph_map.height)
+
+    terminal_display.update(graph_map)
 
 
     print(colorama.Style.RESET_ALL)  # Reset terminal formatting
