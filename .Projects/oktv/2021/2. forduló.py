@@ -18,7 +18,7 @@ def ELSO_FELADAT():
             is_input_divisible = True
 
     if n == 0:
-        ouput.append("0")
+        output_numbers.append("0")
 
 
     if not is_input_divisible:
@@ -27,10 +27,26 @@ def ELSO_FELADAT():
 
 
 whole_sequence:tuple = tuple(input())
+whole_sequence_len = len(whole_sequence)
 
 def test_if_sequence_is_mutant(sequence):
-    ACGT_count_list = []
+    mutant = False
+    ACGT_count_dict = {'A':0, 'C':0, 'G':0, 'T':0}
 
-for part_sequence_start in range(0, len(whole_sequence)-2):
-    for part_sequence_end in range(len(whole_sequence)-1, i, -1):
-
+    for val in sequence:
+        ACGT_count_dict[val] += 1
+    
+    for val in ('A','C','G','T'):
+        if ACGT_count_dict[val]*2 >= len(sequence):
+            return True
+    
+    return False
+[0,1,2,3,4]
+#j : 0, 0, 1, 0
+#k : 4, 3, 4, 3
+for part_sequence_start in range(0, whole_sequence_len):
+    for change in range(0, whole_sequence_len-part_sequence_start):
+        part_is_mutant = test_if_sequence_is_mutant(whole_sequence[part_sequence_start+change:part_sequence_end+1])
+        if part_is_mutant:
+            print(part_sequence_end-part_sequence_start)
+            break
