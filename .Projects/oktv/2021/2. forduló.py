@@ -26,27 +26,50 @@ def ELSO_FELADAT():
     print(" ".join(output_numbers))
 
 
-whole_sequence:tuple = tuple(input())
-whole_sequence_len = len(whole_sequence)
+def MASODIK_FELADAT():
+    whole_sequence:tuple = tuple(input())
+    whole_sequence_len = len(whole_sequence)
 
-def test_if_sequence_is_mutant(sequence):
-    mutant = False
-    ACGT_count_dict = {'A':0, 'C':0, 'G':0, 'T':0}
+    def sequence_is_mutant(sequence):
+        mutant = False
+        ACGT_count_dict = {'A':0, 'C':0, 'G':0, 'T':0}
 
-    for val in sequence:
-        ACGT_count_dict[val] += 1
-    
-    for val in ('A','C','G','T'):
-        if ACGT_count_dict[val]*2 >= len(sequence):
-            return True
-    
-    return False
-[0,1,2,3,4]
-#j : 0, 0, 1, 0
-#k : 4, 3, 4, 3
-for part_sequence_start in range(0, whole_sequence_len):
-    for change in range(0, whole_sequence_len-part_sequence_start):
-        part_is_mutant = test_if_sequence_is_mutant(whole_sequence[part_sequence_start+change:part_sequence_end+1])
-        if part_is_mutant:
-            print(part_sequence_end-part_sequence_start)
-            break
+        for val in sequence:
+            ACGT_count_dict[val] += 1
+        
+        for val in ('A','C','G','T'):
+            if ACGT_count_dict[val]*2 >= len(sequence):
+                return True
+        
+        return False
+
+    found = False
+    for length in range(whole_sequence_len, -1, -1):
+        
+        for start in range(0, whole_sequence_len-length):
+            part_sequence = whole_sequence[start : (start+length+1)]
+            if sequence_is_mutant(part_sequence):
+                print(len(part_sequence))
+                found = True
+                break
+        
+        if found: break
+
+
+def HARMADIK_FELADAT():
+    num_of_lengths, num_of_questions = map(int, input().split())
+    lengths = tuple(map(int, input().split()))
+
+    answers = [0 for i in range(num_of_questions)]
+
+    for q in range(num_of_questions):
+        a, b = map(int, input().split())
+        for c in lengths:
+            if a+b>c and a+c>b and b+c>a:
+                answers[q] += 1
+
+    for answer in answers: print(answer)
+
+
+#def NEGYEDIK_FELADAT():
+
