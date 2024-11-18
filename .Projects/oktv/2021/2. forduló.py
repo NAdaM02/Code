@@ -72,4 +72,38 @@ def HARMADIK_FELADAT():
 
 
 #def NEGYEDIK_FELADAT():
+height, width, piece_count = map(int, input().split())
 
+pieces:list = []
+for piece in range(piece_count):
+    row, col = map(int, input().split())
+    pieces.append((row, col))
+
+print(pieces)
+pass_count = 0
+while 0 < len(pieces):
+    robot_position = [1, 1]
+    while robot_position != [height, width]:
+        moved = False
+        for i in range(len(pieces)):
+            if pieces[i][0] == robot_position[0]:
+                robot_position[1] = pieces[i][1]
+                del(pieces[i])
+                moved = True
+                break
+        if not moved:
+            for i in range(len(pieces)):
+                if pieces[i][1] == robot_position[1]:
+                    robot_position[0] = pieces[i][0]
+                    del(pieces[i])
+                    moved = True
+                    break
+        if not moved:
+            if robot_position != width:
+                robot_position[1] += 1
+            else:
+                robot_position = [height, width]
+    print(robot_position, pieces)
+    pass_count += 1
+
+print(pass_count)
