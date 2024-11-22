@@ -79,31 +79,53 @@ for piece in range(piece_count):
     row, col = map(int, input().split())
     pieces.append((row, col))
 
-print(pieces)
 pass_count = 0
+
+import os
+from time import sleep as wait
+def visualize_field(r_positions, p_position, height, width):
+    field_map = [['.' for i in range(width)] for j in range(height)]
+    for r_p in r_positions:
+        field_map[r_p[0]-1][r_p[1]-1] = '×'
+    field_map[p_position[0]-1][p_position[1]-1] = 'o'
+
+    for row in field_map:
+        print(" ".join(row))
+
+os.system('cls')
 while 0 < len(pieces):
-    robot_position = [1, 1]
-    while robot_position != [height, width]:
+    pass_count += 1
+    passing_position = [1, 1]
+    while passing_position != [height, width]:
+        print('pass:', pass_count)
+        visualize_field(pieces, passing_position, height, width)
         moved = False
         for i in range(len(pieces)):
-            if pieces[i][0] == robot_position[0] and robot_position[1] < pieces[i][1]: # in same row
-                robot_position[1] = pieces[i][1]
+            if pieces[i][0] == passing_position[0] and passing_position[1] < pieces[i][1]: # in same row
+                passing_position[1] = pieces[i][1]
                 del(pieces[i])
                 moved = True
                 break
         if not moved:
             for i in range(len(pieces)):
-                if pieces[i][1] == robot_position[1] and robot_position[0] < pieces[i][0]: # in same column
-                    robot_position[0] = pieces[i][0]
+                if pieces[i][1] == passing_position[1] and passing_position[0] < pieces[i][0]: # in same column
+                    passing_position[0] = pieces[i][0]
                     del(pieces[i])
                     moved = True
                     break
         if not moved:
-            if robot_position != width:
-                robot_position[1] += 1
+            if passing_position[0] == height:
+                passing_position[1] = width
+            elif passing_position[1] < width:
+                passing_position[1] += 1
             else:
-                robot_position = [height, width]
-    print(robot_position, pieces)
-    pass_count += 1
+                passing_position = [height, width]
+        wait(0.5)
+        os.system('cls')
+    
+    print('pass:', pass_count)
+    visualize_field(pieces, passing_position, height, width)
+    wait(0.5)
+    os.system('cls')
 
-print(pass_count)
+print('pass:', pass_count)
