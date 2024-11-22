@@ -86,14 +86,14 @@ while 0 < len(pieces):
     while robot_position != [height, width]:
         moved = False
         for i in range(len(pieces)):
-            if pieces[i][0] == robot_position[0]:
+            if pieces[i][0] == robot_position[0] and robot_position[1] < pieces[i][1]: # in same row
                 robot_position[1] = pieces[i][1]
                 del(pieces[i])
                 moved = True
                 break
         if not moved:
             for i in range(len(pieces)):
-                if pieces[i][1] == robot_position[1]:
+                if pieces[i][1] == robot_position[1] and robot_position[0] < pieces[i][0]: # in same column
                     robot_position[0] = pieces[i][0]
                     del(pieces[i])
                     moved = True
