@@ -92,13 +92,13 @@ def visualize_field(r_positions, p_position, height, width):
     for row in field_map:
         print(" ".join(row))
 
-os.system('cls')
+#os.system('cls')
 while 0 < len(pieces):
     pass_count += 1
     passing_position = [1, 1]
     while passing_position != [height, width]:
-        print('pass:', pass_count)
-        visualize_field(pieces, passing_position, height, width)
+        #print('pass:', pass_count)
+        #visualize_field(pieces, passing_position, height, width)
         moved = False
         for i in range(len(pieces)):
             if pieces[i][0] == passing_position[0] and passing_position[1] < pieces[i][1]: # in same row
@@ -120,12 +120,12 @@ while 0 < len(pieces):
                 passing_position[1] += 1
             else:
                 passing_position = [height, width]
-        wait(0.5)
-        os.system('cls')
+        #wait(0.5)
+        #os.system('cls')
     
-    print('pass:', pass_count)
-    visualize_field(pieces, passing_position, height, width)
-    wait(0.5)
-    os.system('cls')
+    #print('pass:', pass_count)
+    #visualize_field(pieces, passing_position, height, width)
+    #wait(0.5)
+    #os.system('cls')
 
-print('pass:', pass_count)
+print(pass_count)
