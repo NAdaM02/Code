@@ -7,7 +7,8 @@ def apply_antialiasing(img, factor=2):
     return img.resize((width, height), Image.LANCZOS)
 
 def convert_near_white_to_white(input_path, threshold=80):
-    output_path = input_path.replace('.jpg', f' - {round(threshold)}.jpg')
+    output_path = input_path + f' - {round(threshold)}.jpg'
+    input_path = input_path + '.jpg'
     threshold = 1 - threshold/100
     img = Image.open(input_path)
     
@@ -26,7 +27,7 @@ def convert_near_white_to_white(input_path, threshold=80):
     output_img.save(output_path)
     print(f"Modified image saved as {output_path}")
 
-input_image = input('image to convert path: ')
+input_image = input('image to convert name: ')
 threshold_input = input('Give threshold [0-100]: ')
 while threshold_input != "":
 
