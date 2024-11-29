@@ -1,4 +1,5 @@
-& "$PSScriptRoot../../folders/coder.ps1"
+&scriptLocation = &PSScriptRoot
+& "&scriptLocation/../../folders/coder.ps1"
 & "sync.bat"
-& "$PSScriptRoot../../folders/iskola.ps1"
+& "&scriptLocation/../../folders/iskola.ps1"
 & "sync.bat"
