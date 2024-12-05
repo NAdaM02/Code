@@ -293,29 +293,29 @@ def make_axis(mark_counts:tuple=(5,5), marking_spaces:tuple=(3,3)) -> CharacterM
     return axis_map
 
 
-def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_range:tuple=(0., 0.), marker:str="×") -> CharacterMap:
-    x_range_size = x_range[1] - x_range[0] + 1
+"""def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_range:tuple=(0., 0.), marker:str="×") -> CharacterMap:
+    x_range_len = x_range[1] - x_range[0] + 1
+    y_range_len = y_range[1] - y_range[0] + 1
     
-    x_step = x_range_size / width
+    x_step = x_range_len / width
     
     marks_map = CharacterMap(width, height)
     test_vals = tuple(x_range[0]+i*x_step for i in range(0, width+1))
 
-    print(width, marks_map.width, marks_map.height)
-    print(list(marks_map.array))
-    _ = np.array([[1,2],[3,4],[5,6]])
-    print(_)
-    print(_[2][1])
-    wait_seconds(120)
+    deviation = 0
     for col in range(width):
         x = test_vals[col]
 
         funct_x = funct(x)# + x_step/2
         #funct_x -= funct_x%x_step
 
-        y = round((funct_x-y_range[0]) / (y_range[1]-y_range[0]) * (height))
+        scaled_y = (funct_x - y_range[0]) / y_range_len * height - deviation
+        y = round(scaled_y)
+
+        deviation = scaled_y - y
         
-        if y < height:
+        if 0 <= y < height:
+            print(funct_x)
             marks_map.array[height-y-1][col] = marker
 
     return marks_map
@@ -329,6 +329,54 @@ def make_graph(funct, width:int, height:int, x_range:tuple=(0.,0.), y_range:tupl
 
     graph_map = axis_map
 
+    graph_map.add_map_array(2, 2, marks_map.array, (' '))
+    
+    return graph_map"""
+
+def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_range:tuple=(0., 0.), marker:str="×") -> CharacterMap:
+    if x_range[0] == x_range[1]:
+        x_range = (0, 4*np.pi)
+    
+    if y_range[0] == y_range[1]:
+        y_range = (-1, 1)
+    
+    x_range_len = x_range[1] - x_range[0]
+    y_range_len = y_range[1] - y_range[0]
+    
+    marks_map = CharacterMap(width, height)
+    
+    x_values = np.linspace(x_range[0], x_range[1], width)
+    
+    deviation = 0
+    for col in range(width):
+        x = x_values[col]
+        
+        try:
+            y_val = funct(x)
+            
+            scaled_y = round(((y_val - y_range[0]) / y_range_len) * (height - 1))
+            
+            graph_y = height - 1 - scaled_y
+            
+            if 0 <= graph_y < height:
+                marks_map.array[graph_y][col] = marker
+        
+        except Exception:
+            pass
+    
+    return marks_map
+
+def make_graph(funct, width:int, height:int, x_range:tuple=(0.,0.), y_range:tuple=(0.,0.), mark_counts:tuple=(0,0), marker:str="×") -> CharacterMap:
+    if mark_counts == (0,0):
+        mark_counts = (5, 5)
+    
+    marking_spaces = ((width-5)//mark_counts[0]-1, (height-5)//mark_counts[1]-1)
+    
+    axis_map = make_axis(mark_counts, marking_spaces)
+    
+    marks_map = get_graph_marks(funct, axis_map.width-4, axis_map.height-4, x_range, y_range, marker)
+    
+    graph_map = axis_map
     graph_map.add_map_array(2, 2, marks_map.array, (' '))
     
     return graph_map
@@ -376,11 +424,9 @@ if __name__ == "__main__":
     #write_szozat(char_width, char_height, char_row, 0.001)
 
     
-    #graph_map = make_graph(lambda x: np.sin(x), width=120, height=30, x_range=(-10, 10), y_range=(-1, 1), mark_counts=(11, 3), marker="×")
+    graph_map = make_graph(lambda x: np.sin(x), width=121, height=30, x_range=(-10, 10), y_range=(-1, 1), mark_counts=(11, 3), marker="×")
 
-    #graph_map = get_graph_marks(lambda x: 2*x, 121, 31, (-10, 10), (-10, 10))
-
-    graph_map = get_graph_marks(lambda x: 2*x, 10, 7, (-10, 10), (-10, 10))
+    #graph_map = make_graph(lambda x: x**2, width=80, height=40, x_range=(-5, 5), y_range=(0, 25))
 
     terminal_display = TerminalDisplay(graph_map.height)
 
