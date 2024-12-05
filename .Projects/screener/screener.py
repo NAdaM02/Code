@@ -335,10 +335,10 @@ def make_graph(funct, width:int, height:int, x_range:tuple=(0.,0.), y_range:tupl
 
 def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_range:tuple=(0., 0.), marker:str="×") -> CharacterMap:
     if x_range[0] == x_range[1]:
-        x_range = (0, 4*np.pi)
+        x_range = (-5, 5)
     
     if y_range[0] == y_range[1]:
-        y_range = (-1, 1)
+        y_range = (-5, 5)
     
     x_range_len = x_range[1] - x_range[0]
     y_range_len = y_range[1] - y_range[0]
@@ -427,6 +427,8 @@ if __name__ == "__main__":
     graph_map = make_graph(lambda x: np.sin(x), width=121, height=30, x_range=(-10, 10), y_range=(-1, 1), mark_counts=(11, 3), marker="×")
 
     #graph_map = make_graph(lambda x: x**2, width=80, height=40, x_range=(-5, 5), y_range=(0, 25))
+
+    graph_map = make_graph(lambda x: x**2, 100, 100)
 
     terminal_display = TerminalDisplay(graph_map.height)
 
