@@ -31,7 +31,7 @@ class CharacterMap:
         else:
             self.width = width
             self.height = height
-            self.array = np.full(((self.height, self.width)), filler, dtype='<U1')
+            self.array = np.full(((height, width)), filler, dtype='<U1')
 
         self.filler = filler
     
@@ -294,15 +294,21 @@ def make_axis(mark_counts:tuple=(5,5), marking_spaces:tuple=(3,3)) -> CharacterM
 
 
 def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_range:tuple=(0., 0.), marker:str="×") -> CharacterMap:
-    x_range_size = x_range[1] - x_range[0]
+    x_range_size = x_range[1] - x_range[0] + 1
     
     x_step = x_range_size / width
     
     marks_map = CharacterMap(width, height)
     test_vals = tuple(x_range[0]+i*x_step for i in range(0, width+1))
 
-    for c in range(width):
-        x = test_vals[c]
+    print(width, marks_map.width, marks_map.height)
+    print(list(marks_map.array))
+    _ = np.array([[1,2],[3,4],[5,6]])
+    print(_)
+    print(_[2][1])
+    wait_seconds(120)
+    for col in range(width):
+        x = test_vals[col]
 
         funct_x = funct(x)# + x_step/2
         #funct_x -= funct_x%x_step
@@ -310,7 +316,7 @@ def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_rang
         y = round((funct_x-y_range[0]) / (y_range[1]-y_range[0]) * (height))
         
         if y < height:
-            marks_map.array[height-y-1][c] = marker
+            marks_map.array[height-y-1][col] = marker
 
     return marks_map
 
@@ -372,7 +378,9 @@ if __name__ == "__main__":
     
     #graph_map = make_graph(lambda x: np.sin(x), width=120, height=30, x_range=(-10, 10), y_range=(-1, 1), mark_counts=(11, 3), marker="×")
 
-    graph_map = get_graph_marks(lambda x: abs(x), 121, 31, (-10, 10), (-1, 1))
+    #graph_map = get_graph_marks(lambda x: 2*x, 121, 31, (-10, 10), (-10, 10))
+
+    graph_map = get_graph_marks(lambda x: 2*x, 10, 7, (-10, 10), (-10, 10))
 
     terminal_display = TerminalDisplay(graph_map.height)
 
