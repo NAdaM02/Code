@@ -102,7 +102,7 @@ class TerminalDisplay:
         self.to_beginning()
         stdout.write(output)
         stdout.flush()
-    
+
     def update(self, display_map:CharacterMap, stay_seconds:float=None):
         if stay_seconds:
             start_time = precise_time()
@@ -224,10 +224,10 @@ def write_text(text:str="", char_width:int=None, char_height:int=None, char_row:
         render_char_end_index = min(render_char_start_index + render_char_count, text_char_count)
 
         for char_index in range( render_char_start_index, render_char_end_index ):
-            try:
-                render_char(char_width, char_height, display_map.width - step_index + char_width*char_index, char_row, char_maps[char_index])
-            except:
-                display_map.fill("!")
+            #try:
+            render_char(char_width, char_height, display_map.width - step_index + char_width*char_index, char_row, char_maps[char_index])
+            #except:
+            #    display_map.fill("!")
         
         terminal_display.update(display_map, stay_seconds=stay_seconds)
         
@@ -399,40 +399,63 @@ CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'{DOT}/Data/Char
 CHAR_WIDTH_PER_HEIGHT = 78/155
 
 
-if __name__ == "__main__":
+"""if __name__ == "__main__":
 
     colorama.init() # Initialize terminal formatting
 
 
     os.system('cls')
 
-    #start_display_width, start_display_height = get_terminal_display_size()
+    start_display_width, start_display_height = get_terminal_display_size()
+    display_map = CharacterMap(start_display_width, start_display_height, filler=" ")
+    terminal_display = TerminalDisplay(start_display_height)
+    monitor = Monitor()
+    terminal_display.update(display_map)
 
-    #display_map = CharacterMap(start_display_width, start_display_height, filler=" ")
+    char_width, char_height = 20, 30
+    char_row = (display_map.height-char_height)//2
 
-    #terminal_display = TerminalDisplay(start_display_height)
-
-    #monitor = Monitor()
-
-    #terminal_display.update(display_map)
+    write_text('911 was an inside job...', char_width, char_height, char_row, 0.001*20/4)
     
-    #char_width, char_height = 20, 30
-
-    #char_row = (display_map.height-char_height)//2
-    
-    #+write_text('911 was an inside job...', char_width, char_height, char_row, 0.001*20/4)
     #write_szozat(char_width, char_height, char_row, 0.001)
 
     
-    graph_map = make_graph(lambda x: np.sin(x), width=121, height=30, x_range=(-10, 10), y_range=(-1, 1), mark_counts=(11, 3), marker="×")
+    #graph_map = make_graph(lambda x: np.sin(x), width=121, height=30, x_range=(-10, 10), y_range=(-1, 1), mark_counts=(11, 3), marker="×")
 
     #graph_map = make_graph(lambda x: x**2, width=80, height=40, x_range=(-5, 5), y_range=(0, 25))
 
-    graph_map = make_graph(lambda x: x**2, 100, 100)
+    #graph_map = make_graph(lambda x: x**2, 100, 100)
 
-    terminal_display = TerminalDisplay(graph_map.height)
+    #terminal_display = TerminalDisplay(.height)
 
-    terminal_display.update(graph_map)
+    #terminal_display.update(graph_map)
 
+    display_map = 
+
+
+    print(colorama.Style.RESET_ALL)  # Reset terminal formatting
+"""
+if __name__ == "__main__":
+
+    os.system('cls')
+
+    width, height = get_terminal_display_size()
+
+    display_map = CharacterMap(width, height)
+
+    terminal_display = TerminalDisplay(height)
+
+    monitor = Monitor
+
+
+
+    colorama.init() # Initialize terminal formatting
+
+
+    while True:
+        display_map = monitor.to_map(width, height)
+        terminal_display.update(display_map)
+    terminal_display.clear()
+        
 
     print(colorama.Style.RESET_ALL)  # Reset terminal formatting
