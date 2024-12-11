@@ -6,7 +6,7 @@ for /f "delims=" %%i in ('git rev-parse --show-toplevel') do set REPO_PATH=%%i
 
 cd %REPO_PATH%
 
-echo ° Syncing at %REPO_PATH%
+echo ❯ Syncing at %REPO_PATH%
 echo.
 
 
@@ -22,15 +22,15 @@ set "COMMIT_MSG=%DATE% - %COMMIT_MSG%"
 git commit -m "%COMMIT_MSG%"
 
 echo.
-echo × PULL-ing changes...
+echo @ PULL-ing changes...
 git pull
 
 echo.
-echo × PUSH-ing changes...
+echo @ PUSH-ing changes...
 git push > nul
 
 echo.
-echo ° Syncing finished.
+echo ❯ Syncing finished.
 echo.
 
 cd %call_dir% > nul

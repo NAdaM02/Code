@@ -6,7 +6,7 @@ for /f "delims=" %%i in ('git rev-parse --show-toplevel') do set REPO_PATH=%%i
 
 cd %REPO_PATH%
 
-echo Commiting at %REPO_PATH%
+echo ❯ Commiting at %REPO_PATH%
 echo.
 
 git checkout main
@@ -24,7 +24,7 @@ if "%COMMIT_MSG%"=="" (
 git commit -m "%COMMIT_MSG%"
 
 echo.
-echo Commiting finished.
+echo ❯ Commiting finished.
 echo.
 
 cd %call_dir% > nul
