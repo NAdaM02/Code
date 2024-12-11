@@ -451,6 +451,7 @@ if __name__ == "__main__":
 
     colorama.init() # Initialize terminal formatting
 
+    #write_text("A mexikóiak részt vettek a Bakel és tuba közt forgatásában", 20, None, 2, 0.005)
 
     while True:
         display_map = monitor.to_map(width, height)
