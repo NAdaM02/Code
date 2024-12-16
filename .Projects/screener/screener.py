@@ -9,6 +9,7 @@ from PIL.ImageGrab import grab as take_screenshot
 from sys import stdout
 from PIL import Image
 from threading import Thread
+import argparse
 
 DOT = (os.path.dirname(__file__)).replace('\\','/')
 
@@ -173,6 +174,27 @@ class Monitor:
 
 def get_terminal_display_size():
     inp = input('input size coherent [11,14,19,28,56] or [16x9]:  ')
+    if inp == '':
+        width, height = 300, 40
+    elif ('x' not in inp) and ('*' not in inp):
+        x = int(inp)
+        width, height = x*16, x*9
+    else:
+        width, height = inp.split('x')
+        width=int(width); height=int(height)
+    
+    return width, height
+
+
+def get_parsed_inputs():
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument('size', type=str, nargs='?', default='20', help='Size coherent [11,14,19,28,56] or [16x9]')
+    
+    args = parser.parse_args()
+
+    inp = args.size
+
     if inp == '':
         width, height = 300, 40
     elif ('x' not in inp) and ('*' not in inp):
@@ -439,7 +461,7 @@ if __name__ == "__main__":
 
     os.system('cls')
 
-    width, height = get_terminal_display_size()
+    width, height = get_parsed_inputs()
 
     display_map = CharacterMap(width, height)
 
