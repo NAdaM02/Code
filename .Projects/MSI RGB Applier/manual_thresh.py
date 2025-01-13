@@ -48,7 +48,12 @@ def saveThreshold(img_to_detect:str, threshold:float=0.78) :
         writer.writeheader()
         writer.writerows(data)
 
+import keyboard
 
+def waitForShift(event):
+    global pressed_shift
+    if event.event_type == keyboard.KEY_DOWN:
+        pressed_shift=True
 
 if __name__ == "__main__" :
     check = ""
@@ -57,6 +62,13 @@ if __name__ == "__main__" :
         check = input('___.png\n-> ')
 
         if check != "exit()" :
-            saveThreshold(check)
-            print(last_val)
+            pressed_shift = False
+            keyboard.on_press_key('shift', waitForShift)
 
+            while not pressed_shift: pass
+
+            keyboard.unhook_key('shift')
+
+            saveThreshold(check)
+
+            print(last_val)

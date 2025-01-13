@@ -44,7 +44,7 @@ def findImageOnScreen(img_to_detect:str, threshold:float='', screen_index:int=0,
     min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
     if memory == True:
         last_val = max_val
-    if max_val >= threshold-0.001:
+    if max_val >= threshold-0.005:
         center_x = max_loc[0] + selected_monitor.x + template_width // 2
         center_y = max_loc[1] + selected_monitor.y + template_height // 2
         return (center_x, center_y)
@@ -67,11 +67,11 @@ def findAndClick(name):
 if __name__ == "__main__" :
     subprocess.Popen(r'.\\msi_center.lnk', shell=True)
 
-    while not findImageOnScreen('lines'): pass
-
-    wait(0.5)
-
+    while not findImageOnScreen('dropdown'): pass
     print("Opened")
+    
+    wait(0.5)
+    print()
 
     findAndClick('dropdown')
     findAndClick('1')
