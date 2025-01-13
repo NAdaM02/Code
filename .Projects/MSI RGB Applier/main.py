@@ -58,7 +58,7 @@ def findAndClick(name):
         dropdown = findImageOnScreen(name)
     
     pyautogui.click(item)
-    wait(0.1)
+    wait(0.3)
 
     print(f'{name} <')
 
@@ -76,15 +76,17 @@ if __name__ == "__main__" :
     findAndClick('dropdown')
     findAndClick('1')
     findAndClick('apply')
+    print()
 
     while not findImageOnScreen('lines'): pass
-    wait(0.1)
+    wait(0.2)
 
     findAndClick('dropdown')
     findAndClick('2')
     findAndClick('apply')
+    print()
 
     while not findImageOnScreen('lines'): pass
-    wait(0.1)
+    wait(0.2)
 
     findAndClick('exit')
