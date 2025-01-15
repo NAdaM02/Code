@@ -29,3 +29,34 @@ print(artist)
 
 user = spotify.user('plamere')
 print(user)
+
+numbers = (
+(".o.", "| |", "'0'"),
+(".~1", "  |", "  |"),
+("˛=,", " ,I", "2__"),
+("˙´\\", " ~3", ".˛/"),
+("/  ", "4+*", " |"),
+("_~~", "5o.", "--/ "),
+("˛o. ", "6*.", "˙o˙"),
+("\"\"7", " / ", "*  "),
+(",o,", ",8, ", "˙o˙"),
+(".o,", "´~9", " / ")
+)
+
+print("\n\n\n")
+
+next = ("×.", "-|>", "×˙")
+pause = ("O O", "O O", "O O")
+resume = ("×.", "O|>", "×˙")
+previous = (" .×", "<|-", " ˙×")
+like = (",-.-,", "', ,'", "  `  ")
+liked = (",=_=,", "\%X%/", " ˇ÷ˇ ")
+
+print()
+print("\n".join(like))
+print()
+print("\n".join(liked))
+print()
+print("\n".join(pause))
+print()
+print("\n".join(resume))
