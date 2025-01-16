@@ -81,6 +81,13 @@ class CharacterMap:
         
         return self.array
 
+    def render_char(self, char_width:int, char_height:int, char_col:int, char_row:int):
+        shown = (0-char_width <= char_col <= self.array.width) and (0-char_height <= char_row <= self.array.height)
+        if shown:
+            self.array.add_map_array(col=int(char_col), row=int(char_row), added_array=self.array, exclude_chars=(" "))
+        
+        return shown
+
 
 class TerminalDisplay:
     def __init__(self, height:int=512):
@@ -97,23 +104,21 @@ class TerminalDisplay:
         os.system('cls')
     
     def write(self, display_map:CharacterMap):
-        output = "\n"
-        for row in display_map.array:
-            output += " ".join(row) + "\n"
+        output = "\n" + "\n".join((" ".join(row) for row in display_map.array))
         self.to_beginning()
         stdout.write(output)
         stdout.flush()
 
-    def update(self, display_map:CharacterMap, stay_seconds:float=None):
-        if stay_seconds:
-            start_time = precise_time()
+    def update(self, display_map:CharacterMap, fps:float):
 
-            self.write(display_map)
+        start_time = precise_time()
+        stay_seconds = int(10000/fps)/10000
 
-            while precise_time() - start_time < stay_seconds :
-                pass
-        else:
-            self.write(display_map)
+        self.write(display_map)
+        #asyncio.sleep(int(10000/fps)/10000)
+
+        while precise_time() - start_time < stay_seconds :
+            pass
 
 
 class CustomImage:
@@ -217,14 +222,6 @@ def flashScreen(display_map:CharacterMap, terminal_display:TerminalDisplay, spee
         terminal_display.update(display_map, stay_seconds=speed)
 
 
-def render_char(char_width:int, char_height:int, char_col:int, char_row:int, char_map:CharacterMap):
-    shown = (0-char_width <= char_col <= display_map.width) and (0-char_height <= char_row <= display_map.height)
-    if shown:
-        display_map.add_map_array(col=int(char_col), row=int(char_row), added_array=char_map.array, exclude_chars=(" "))
-    
-    return shown
-
-
 def write_text(text:str="", char_width:int=None, char_height:int=None, char_row:int=0, stay_seconds:float=0):
     if not char_height:  char_height = char_width//CHAR_WIDTH_PER_HEIGHT
     if not char_width:  char_width = char_height*CHAR_WIDTH_PER_HEIGHT
@@ -247,7 +244,7 @@ def write_text(text:str="", char_width:int=None, char_height:int=None, char_row:
 
         for char_index in range( render_char_start_index, render_char_end_index ):
             #try:
-            render_char(char_width, char_height, display_map.width - step_index + char_width*char_index, char_row, char_maps[char_index])
+            display_map.render_char(char_width, char_height, display_map.width - step_index + char_width*char_index, char_row, char_maps[char_index])
             #except:
             #    display_map.fill("!")
         
@@ -313,47 +310,6 @@ def make_axis(mark_counts:tuple=(5,5), marking_spaces:tuple=(3,3)) -> CharacterM
         axis_map.array[i][y_axis_col] = char
     
     return axis_map
-
-
-"""def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_range:tuple=(0., 0.), marker:str="×") -> CharacterMap:
-    x_range_len = x_range[1] - x_range[0] + 1
-    y_range_len = y_range[1] - y_range[0] + 1
-    
-    x_step = x_range_len / width
-    
-    marks_map = CharacterMap(width, height)
-    test_vals = tuple(x_range[0]+i*x_step for i in range(0, width+1))
-
-    deviation = 0
-    for col in range(width):
-        x = test_vals[col]
-
-        funct_x = funct(x)# + x_step/2
-        #funct_x -= funct_x%x_step
-
-        scaled_y = (funct_x - y_range[0]) / y_range_len * height - deviation
-        y = round(scaled_y)
-
-        deviation = scaled_y - y
-        
-        if 0 <= y < height:
-            print(funct_x)
-            marks_map.array[height-y-1][col] = marker
-
-    return marks_map
-
-
-def make_graph(funct, width:int, height:int, x_range:tuple=(0.,0.), y_range:tuple=(0.,0.), mark_counts:tuple=(0,0), marker:str="×") -> CharacterMap:
-    marking_spaces = ((width-5)//mark_counts[0]-1, (height-5)//mark_counts[1]-1)
-    axis_map = make_axis(mark_counts, marking_spaces)
-
-    marks_map = get_graph_marks(funct, axis_map.width-4, axis_map.height-4, x_range, y_range, marker)
-
-    graph_map = axis_map
-
-    graph_map.add_map_array(2, 2, marks_map.array, (' '))
-    
-    return graph_map"""
 
 def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_range:tuple=(0., 0.), marker:str="×") -> CharacterMap:
     if x_range[0] == x_range[1]:
@@ -421,7 +377,7 @@ CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'{DOT}/Data/Char
 CHAR_WIDTH_PER_HEIGHT = 78/155
 
 
-if __name__ == "__main__":
+"""if __name__ == "__main__":
 
     colorama.init() # Initialize terminal formatting
 
@@ -456,9 +412,9 @@ if __name__ == "__main__":
     terminal_display.update(graph_map)
 
 
-    print(colorama.Style.RESET_ALL)  # Reset terminal formatting
+    print(colorama.Style.RESET_ALL)  # Reset terminal formatting"""
 
-"""if __name__ == "__main__":
+if __name__ == "__main__":
 
     os.system('cls')
 
@@ -478,8 +434,8 @@ if __name__ == "__main__":
 
     while True:
         display_map = monitor.to_map(width, height)
-        terminal_display.update(display_map)
+        terminal_display.update(display_map, 60)
     terminal_display.clear()
         
 
-    print(colorama.Style.RESET_ALL)  # Reset terminal formatting"""
+    print(colorama.Style.RESET_ALL)  # Reset terminal formatting
