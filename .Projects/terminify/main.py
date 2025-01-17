@@ -1,7 +1,3 @@
-import spotipy
-from spotipy.oauth2 import SpotifyOAuth
-import sys
-
 from time import time as epoch_now
 from time import perf_counter as precise_time
 from time import sleep as wait_seconds
@@ -13,6 +9,7 @@ from PIL.ImageGrab import grab as take_screenshot
 from sys import stdout
 from PIL import Image
 import asyncio
+import colorama
 
 DOT = (os.path.dirname(__file__)).replace('\\','/')
 
@@ -72,7 +69,7 @@ class CharacterMap:
 
         return self.array[first_rows:last_rows+1, first_columns:last_columns+1]
 
-    def add_map_array(self, row:int, col:int, added_array:np.array, exclude_chars:tuple):
+    def add_map_array(self, row:int, col:int, added_array:np.array, exclude_chars:tuple=()):
         height, width = self.array.shape
         added_height, added_width = added_array.shape
 
@@ -118,16 +115,18 @@ class TerminalDisplay:
         stdout.write(output)
         stdout.flush()
 
-    def update(self, display_map:CharacterMap, fps:float):
+    def update(self, display_map:CharacterMap, fps:float=0):
 
         start_time = precise_time()
-        stay_seconds = int(10000/fps)/10000
+        if fps == 0:
+            self.write(display_map)
+        else:
+            stay_seconds = int(10000/fps)/10000
 
-        self.write(display_map)
-        #asyncio.sleep(int(10000/fps)/10000)
+            self.write(display_map)
 
-        while precise_time() - start_time < stay_seconds :
-            pass
+            while precise_time() - start_time < stay_seconds :
+                pass
 
 
 class CustomImage:
@@ -167,98 +166,83 @@ class CustomImage:
         
         return img_map
 
-if __name__ == "__main__":
-    terminal_display = TerminalDisplay(20)
-    display_map = CharacterMap(width=40, height=20)
 
-    os.system('cls')
-    terminal_display.write(display_map)
-    
-    i = 0
-    while True:
-        i += 1
-        display_map.fill()
-        if i == 1:
-            display_map.add_map_array(0,0, np.array((tuple(".o."), tuple("| |"), tuple("'0'"))), exclude_chars=(" "))
+ART_DICT = {
+    '0' : (".o.", "| |", "'0'"),
+    '1' : (".~1", "  |", "  |"),
+    '2' : ("˛=,", " ,I", "2__"),
+    '3' : ("˙´\\", " ~3", ".˛/"),
+    '4' : ("/  ", "4+*", " | "),
+    '5' : ("_~~", "5o.", "--/"),
+    '6' : ("˛o.", "6*.", "˙o˙"),
+    '7' : ("\"\"7", " / ", "*  "),
+    '8' : (",o,", ",8,", "˙o˙"),
+    '9' : (".o,", "´~9", " / "),
+    'previous' : (" .-", "<:|", " ˙-"),
+    'pause' :    ("¤ ¤", "O O", "¤ ¤"),
+    'resume' :   ("¤. ", "O]>", "¤˙ "),
+    'next' :     ("-. ", "|:>", "-˙ "),
+    'no_shuffle' :    (".¸ ˛.", "  =  ", "˙´ `˙"),
+    'shuffle' :       ("~¸ ˛>", "  ¤  ", "~´ `>"),
+    'smart_shuffle' : ("@¸ ˛>", "  ¤  ", "~´ `>"),
+    'like' :  (",-.-,", "', ,'", "  `  "),
+    'liked' : (",=_=,", "\\"+"%"+"X%/", " ˇ÷ˇ ")
+}
+for key in ART_DICT.keys():
+    m = tuple(tuple(string) for string in ART_DICT[key])
+    ART_DICT[key] = np.array(m)
 
-            display_map.add_map_array(17,37, np.array((tuple(".~1"), tuple("  |"), tuple("  |"))), exclude_chars=(" "))
-        else:
-            i = 0
-            display_map.add_map_array(0,0, np.array((tuple(".~1"), tuple("  |"), tuple("  |"))), exclude_chars=(" "))
-
-            display_map.add_map_array(17,37, np.array((tuple(".o."), tuple("| |"), tuple("'0'"))), exclude_chars=(" "))
-
-        terminal_display.update(display_map, 2)
 
 
-
-
-
-
-numbers = (
-(".o.", "| |", "'0'"),   #0
-(".~1", "  |", "  |"),   #1
-("˛=,", " ,I", "2__"),   #2
-("˙´\\", " ~3", ".˛/"),  #3
-("/  ", "4+*", " |"),    #4
-("_~~", "5o.", "--/ "),  #5
-("˛o. ", "6*.", "˙o˙"),  #6
-("\"\"7", " / ", "*  "), #7
-(",o,", ",8, ", "˙o˙"),  #8
-(".o,", "´~9", " / ")    #9
-)
-
-previous = (" .×", "<|-", " ˙×")
-next = ("×.", "-|>", "×˙")
-pause = ("O O", "O O", "O O")
-resume = ("×.", "O]>", "×˙")
-like = (",-.-,", "', ,'", "  `  ")
-liked = (",=_=,", "\%X%/", " ˇ÷ˇ ")
-
+"""import spotipy
+from spotipy.oauth2 import SpotifyOAuth
+import sys
 
 spotify = spotipy.Spotify(
     auth_manager=SpotifyOAuth(
         client_id='67c0740055b9412da3e1e14978c42742',
         client_secret='4116025cf230497699d6feb972d8bfc7',
-        redirect_uri='http://localhost',
-        ),
+        redirect_uri='http://localhost'
     )
-
-urn = 'spotify:artist:3jOstUTkEu2JkjvRdBA5Gu'
-
-"""if len(sys.argv) > 1:
-    name = ' '.join(sys.argv[1:])
-else:
-    name = 'Radiohead'
-
-results = spotify.search(q='artist:' + name, type='artist')
-items = results['artists']['items']
-if len(items) > 0:
-    artist = items[0]
-    print(artist['name'], artist['images'][0]['url'])"""
+)"""
 
 
-artist = spotify.artist(urn)
-print(artist)
+def song_view():
+    display_map.fill()
 
-user = spotify.user('plamere')
-print(user)
+    display_map.add_map_array(31, 65, ART_DICT['smart_shuffle'])
+
+    display_map.add_map_array(31, 72, ART_DICT['previous'])
+    display_map.add_map_array(31, 77, ART_DICT['pause'])
+    display_map.add_map_array(31, 82, ART_DICT['next'])
+
+    display_map.add_map_array(31, 87, ART_DICT['liked'])
+
+    terminal_display.update(display_map)
+
+    """wait_seconds(2)
+    display_map.add_map_array(31, 65, ART_DICT['no_shuffle'])
+    terminal_display.update(display_map)
+
+    wait_seconds(2)
+    display_map.add_map_array(31, 65, ART_DICT['shuffle'])
+    terminal_display.update(display_map)"""
+
 
 
 if __name__ == "__main__":
 
     colorama.init() # Initialize terminal formatting
 
+    window_width = 96
+    window_height = 36
 
     os.system('cls')
 
-    #start_display_width, start_display_height = get_terminal_display_size()
-    #display_map = CharacterMap(start_display_width, start_display_height, filler=" ")
-    #terminal_display = TerminalDisplay(start_display_height)
+    terminal_display = TerminalDisplay(window_height)
 
+    display_map = CharacterMap(window_width, window_height, filler=' ')
 
-    terminal_display = TerminalDisplay()
-
-    terminal_display.update()
+    song_view()
 
     print(colorama.Style.RESET_ALL)
