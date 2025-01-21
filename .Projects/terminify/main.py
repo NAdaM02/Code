@@ -222,7 +222,9 @@ ART_MAPS = {
     'progress_bar' : [" "*60,],
     'next_up' : ["NEXT UP",],
     'playing_from' : ["Playing from:"],
-    'playlist' : [" "],
+    'playlist' : [" "*45],
+    'artists' : [" "*60],
+    'track_name' : [" "*59],
 }
 for key in ART_MAPS.keys():
     m = np.array([tuple(string) for string in ART_MAPS[key]])
@@ -243,6 +245,8 @@ ART_PLACES = {
     'next_up' : (1,63),
     'playing_from' : (0,1), 
     'playlist' : (0, 15),
+    'artists' : (32, 2),
+    'track_name' : (33, 3),
 }
 
 
@@ -250,17 +254,6 @@ ART_PLACES = {
 def place_art(art_name):
     row, col = ART_PLACES[art_name]
     display_map.add_map_array(row, col, ART_MAPS[art_name])
-
-def download_image(url):
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
-        
-        image = Image.open(BytesIO(response.content))
-        custom_image = CustomImage(np.array(image))
-        return custom_image
-    except:
-        return CustomImage(ART_MAPS['cover_art'])
 
 def pad_with_spaces(array):
     rows, cols = array.shape
@@ -272,9 +265,6 @@ def pad_with_spaces(array):
     
     return result
 
-def update_album_cover(cover_map):
-    row, col = ART_PLACES['cover_art']
-    display_map.add_map_array(row, col, cover_map.array)
 
 
 
@@ -301,20 +291,15 @@ def stop_resume():
     if current:
         if current['is_playing']:
             sp.pause_playback()
-            return 'Paused'
         else:
             sp.start_playback()
-            return 'Resumed'
-
-
-def next_track():
-    sp.next_track()
-    return 'Next track'
 
 
 def previous_track():
     sp.previous_track()
-    return 'Previous track'
+
+def next_track():
+    sp.next_track()
 
 
 def get_liked_status():
@@ -345,6 +330,7 @@ def get_time():
         current_time = round(current['progress_ms'] / 1000)
         return current_time
 
+
 def add_progress_bar(progress):
     progress = round(progress*60)
     progress_bar_string = "¤"*(progress-1) + "@" + "-"*(60-progress)
@@ -352,6 +338,7 @@ def add_progress_bar(progress):
     row, col = ART_PLACES['progress_bar']
 
     display_map.add_map_array(row, col, np.array([tuple(progress_bar_string)]))
+
 
 def get_next_queued_songs():
     if current and 'queue' in current:
@@ -362,28 +349,90 @@ def get_album_cover_url():
     if current:
         return current['item']['album']['images'][0]['url']
 
-def update_current_album_cover():
+def download_image(url):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        image = Image.open(BytesIO(response.content))
+        custom_image = CustomImage(np.array(image))
+        return custom_image
+    except:
+        return CustomImage(ART_MAPS['cover_art'])
+
+def update_album_cover():
     if current:
         album_cover_url = get_album_cover_url()
         album_cover = download_image(album_cover_url).to_map(60,30)
-        update_album_cover(album_cover)
+        row, col = ART_PLACES['cover_art']
+        display_map.add_map_array(row, col, album_cover.array)
 
 
 def get_current_playlist_name():
-    if current and current['context'] and current['context']['type'] == 'playlist':
-        playlist_uri = current['context']['uri']
-        playlist_id = playlist_uri.split(':')[-1]
-        playlist = sp.playlist(playlist_id)
-        return playlist['name']
+    if current and current['context']:
+        context_type = current['context']['type']
+        if context_type == 'playlist':
+            playlist_uri = current['context']['uri']
+            playlist_id = playlist_uri.split(':')[-1]
+            playlist = sp.playlist(playlist_id)
+            return playlist['name']
+
+        elif context_type == 'collection':
+            return "Liked Songs"
+
+        elif context_type == 'album':
+            return current['item']['album']['name']
+
+        elif context_type == 'artist':
+            return current['item']['artists'][0]['name']
     else:
         return " "
 
-def update_current_playlist_name():
-    if current:
-        playlist_name = get_current_playlist_name()
-        row, col = ART_PLACES['playlist']
-        display_map.add_map_array(row, col, np.array([tuple(playlist_name)]))
+def update_playlist_name():
+    playlist_name = get_current_playlist_name()
+    row, col = ART_PLACES['playlist']
+    display_map.add_map_array(row, col, np.array([tuple(playlist_name)]))
 
+
+def get_current_track_name():
+    if current:
+        return current['item']['name']
+    else:
+        return " "
+
+def update_track_name():
+    track_name = get_current_track_name()
+    row, col = ART_PLACES['track_name']
+    display_map.add_map_array(row, col, np.array([tuple(track_name)]))
+
+
+def get_current_track_name():
+    if current:
+        return current['item']['name']
+    else:
+        return " "
+
+def update_track_name():
+    track_name = get_current_track_name()
+    row, col = ART_PLACES['track_name']
+    place_art('track_name')
+    display_map.add_map_array(row, col, np.array([tuple(track_name)]))
+
+
+def get_current_artists():
+    if current:
+        artists = []
+        for artist in current['item']['artists']:
+            artists.append(artist['name'])
+        return ", ".join(artists)
+    else:
+        return " "
+
+def update_artists():
+    artists = get_current_artists()
+    row, col = ART_PLACES['artists']
+    place_art('artists')
+    display_map.add_map_array(row, col, np.array([tuple(artists)]))
 
 
 def update_shuffle_status():
@@ -408,6 +457,7 @@ def song_view():
         'playing_from', 'playlist',
         'cover_art',
         'progress_bar',
+        'artists', 'track_name',
         'next_up',
         'no_shuffle', 'previous', 'resume', 'next', 'liked',
     )
@@ -423,21 +473,39 @@ def song_view():
     
     stop_resume()
 
+    previous_name = None
     while True:
         current = sp.current_playback()
+        if current:
+            if previous_name != current['item']['name']:
+                update_album_cover()
 
-        update_current_album_cover()
-        update_current_playlist_name()
-        update_liked_status()
-        update_playing_status()
-        update_shuffle_status()
+            update_liked_status()
+            update_playing_status()
+            update_shuffle_status()
+            update_track_name()
+            update_artists()
+            update_playlist_name()
 
-        song_length = get_song_length()
-        current_time = get_time()
+            song_length = get_song_length()
+            current_time = get_time()
 
-        if current: add_progress_bar(current_time/song_length)
+            if current: add_progress_bar(current_time/song_length)
 
-        terminal_display.update(display_map)
+            terminal_display.update(display_map)
+
+            """os.system('cls')
+            d = current['item']
+            for key in d.keys():
+                print_separate(key, "                    : ", d[key] )
+                print()
+                print()
+                print()
+            wait_seconds(20)"""
+
+            previous_name = current['item']['name']
+        else:
+            previous_name == None
 
 
 
