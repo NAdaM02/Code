@@ -149,7 +149,6 @@ class TerminalDisplay:
             while precise_time() - start_time < stay_seconds :
                 pass
 
-
 class CustomImage:
     def __init__(self, image_array=np.array([])):
         self.array = image_array
@@ -219,13 +218,15 @@ ART_MAPS = {
     'smart_shuffle' : ("@¸ ˛>", "  ¤  ", "~´ `>"),
     'like' :  (",-.-,", "', ,'", "  `  "),
     'liked' : (",=_=,", "\\"+"%"+"X%/", " ˇ÷ˇ "),
-    'cover_art' : ("o "*30 for _ in range(30)),
-    'progress_bar' : ("˙"*60, " "*60),
-    'next_up' : ("NEXT UP", "       "),
+    'cover_art' : [". "*30 for _ in range(30)],
+    'progress_bar' : [" "*60,],
+    'next_up' : ["NEXT UP",],
+    'playing_from' : ["Playing from:"],
+    'playlist' : [" "],
 }
 for key in ART_MAPS.keys():
-    m = tuple(tuple(string) for string in ART_MAPS[key])
-    ART_MAPS[key] = np.array(m)
+    m = np.array([tuple(string) for string in ART_MAPS[key]])
+    ART_MAPS[key] = m
 
 ART_PLACES = {
     'previous' : (31, 72),
@@ -240,6 +241,8 @@ ART_PLACES = {
     'cover_art' : (2,2),
     'progress_bar' : (31,2),
     'next_up' : (1,63),
+    'playing_from' : (0,1), 
+    'playlist' : (0, 15),
 }
 
 
@@ -249,12 +252,15 @@ def place_art(art_name):
     display_map.add_map_array(row, col, ART_MAPS[art_name])
 
 def download_image(url):
-    response = requests.get(url)
-    response.raise_for_status()
-    
-    image = Image.open(BytesIO(response.content))
-    custom_image = CustomImage(np.array(image))
-    return custom_image
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        image = Image.open(BytesIO(response.content))
+        custom_image = CustomImage(np.array(image))
+        return custom_image
+    except:
+        return CustomImage(ART_MAPS['cover_art'])
 
 def pad_with_spaces(array):
     rows, cols = array.shape
@@ -277,12 +283,19 @@ def update_album_cover(cover_map):
 current = None
 
 
+def get_shuffle_status():
+    if current:
+        return current['shuffle_state']
+
 def toggle_shuffle():
     if current:
         shuffle_state = not current['shuffle_state']
         sp.shuffle(state=shuffle_state)
-        return shuffle_state
 
+
+def get_playing_status():
+    if current:
+        return current['is_playing']
 
 def stop_resume():
     if current:
@@ -310,7 +323,6 @@ def get_liked_status():
         liked = sp.current_user_saved_tracks_contains([track_id])[0]
         return liked
 
-
 def like_unlike_current_song():
     if current:
         track_id = current['item']['id']
@@ -322,17 +334,24 @@ def like_unlike_current_song():
             sp.current_user_saved_tracks_add([track_id])
             return 'Liked'
 
+
 def get_song_length():
     if current:
         song_length = round(current['item']['duration_ms'] / 1000)
         return song_length
-
 
 def get_time():
     if current:
         current_time = round(current['progress_ms'] / 1000)
         return current_time
 
+def add_progress_bar(progress):
+    progress = round(progress*60)
+    progress_bar_string = "¤"*(progress-1) + "@" + "-"*(60-progress)
+
+    row, col = ART_PLACES['progress_bar']
+
+    display_map.add_map_array(row, col, np.array([tuple(progress_bar_string)]))
 
 def get_next_queued_songs():
     if current and 'queue' in current:
@@ -343,26 +362,55 @@ def get_album_cover_url():
     if current:
         return current['item']['album']['images'][0]['url']
 
-
-def update_current_album():
+def update_current_album_cover():
     if current:
         album_cover_url = get_album_cover_url()
         album_cover = download_image(album_cover_url).to_map(60,30)
         update_album_cover(album_cover)
 
 
+def get_current_playlist_name():
+    if current and current['context'] and current['context']['type'] == 'playlist':
+        playlist_uri = current['context']['uri']
+        playlist_id = playlist_uri.split(':')[-1]
+        playlist = sp.playlist(playlist_id)
+        return playlist['name']
+    else:
+        return " "
 
-def update_progress_bar(progress):
-    progress = round(progress*60)
-    row, col = ART_PLACES['progress_bar']
-    display_map.add_map_array(row, col, np.array([tuple("~"*progress + "˝"*(60-progress))]))
+def update_current_playlist_name():
+    if current:
+        playlist_name = get_current_playlist_name()
+        row, col = ART_PLACES['playlist']
+        display_map.add_map_array(row, col, np.array([tuple(playlist_name)]))
+
+
+
+def update_shuffle_status():
+    if current:
+        place_art('shuffle' if get_shuffle_status() else 'no_shuffle')
+
+def update_playing_status():
+    if current:
+        place_art('pause' if get_playing_status() else 'resume')
+
+def update_liked_status():
+    if current:
+        place_art('liked' if get_liked_status() else 'like')
+    
 
 
 def song_view():
     global current
     display_map.fill()
 
-    arts = ('smart_shuffle', 'previous', 'pause', 'next', 'liked', 'cover_art', 'progress_bar', 'next_up')
+    arts = (
+        'playing_from', 'playlist',
+        'cover_art',
+        'progress_bar',
+        'next_up',
+        'no_shuffle', 'previous', 'resume', 'next', 'liked',
+    )
     for art in arts: place_art(art)
 
     #result = sp.search(q='sigma', limit=1, type='track')
@@ -372,21 +420,26 @@ def song_view():
     #terminal_display.update(display_map)
     #print()
     #print(track_cover_url)
+    
+    stop_resume()
+
     while True:
         current = sp.current_playback()
-        if current:
-            update_current_album()
 
-            if get_liked_status():
-                place_art('liked')
-            else:
-                place_art('like')
+        update_current_album_cover()
+        update_current_playlist_name()
+        update_liked_status()
+        update_playing_status()
+        update_shuffle_status()
 
-            song_length = get_song_length()
-            current_time = get_time()
-            update_progress_bar(current_time/song_length)
+        song_length = get_song_length()
+        current_time = get_time()
 
-            terminal_display.update(display_map)
+        if current: add_progress_bar(current_time/song_length)
+
+        terminal_display.update(display_map)
+
+
 
 if __name__ == "__main__":
 
