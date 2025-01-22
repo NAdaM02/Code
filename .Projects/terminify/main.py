@@ -612,7 +612,6 @@ def song_view():
                 if get_playing_status(): add_progress_bar(current_time/song_length)
                 
             terminal_display.update(display_map)
-            print(secs_to_text(current_time))
         
         except KeyboardInterrupt:
             return 0
