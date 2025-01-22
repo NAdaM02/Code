@@ -28,14 +28,20 @@ def convert_to_bw(input_path, threshold=80):
 
 
 input_image = input('image to convert name: ')
+
 threshold_input = input('Give threshold [0-100]: ')
+
 while threshold_input != "":
 
     input_is_correct = False
     while not input_is_correct:
         try:
-            threshold = int(threshold_input)
             input_is_correct = True
+            if threshold_input == 'a':
+                for threshold in range(0, 101, 5):
+                    convert_to_bw(input_image, threshold)
+            else:
+                threshold = int(threshold_input)
 
         except:
             print("\nInput error. Try again.\n")
@@ -44,4 +50,4 @@ while threshold_input != "":
 
     convert_to_bw(input_image, threshold)
 
-    threshold_input = int(input('Give threshold [0-100]: '))
+    threshold_input = input('Give threshold [0-100]: ')
