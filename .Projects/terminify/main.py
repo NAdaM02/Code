@@ -270,7 +270,7 @@ ART_ARRAYS = {
     'playlist' : [" "*47],
     'artists' : [" "*60],
     'track_name' : [" "*59],
-    '3x3_line' : [" "],
+    '3x3_line' : [" "*29 for _ in range(3)],
     'last_3x3' : [" "*3 for _ in range(3)],
     'hour_dots' : ["°" for _ in range(4)],
     '5x4_second_0' : [" "*5 for _ in range(4)],
@@ -304,6 +304,7 @@ ART_PLACES = {
     'playlist' : (0, 15),
     'artists'  : (32, 2),
     'track_name' : (33, 3),
+    '3x3_line' : (28, 64),
     'last_3x3' : (28, 90),
     'hour_dots' : (23, 63),
     '5x4_second_0' : (23, 88),
@@ -407,35 +408,39 @@ def get_time():
     else:
         return 0
 
-def update_time():
-    units = secs_to_units(get_time())
+def update_time(secs):
+    place_art('3x3_line')
 
-    x = 0
-    while units[x] == 0:  x+=1
-    count = 6-x
+    if secs:
+        units = secs_to_units(secs)
 
-    row, col = ART_PLACES['last_3x3']
-    for i in range(0, count, 2):
-        if i == count-1:
-            num1 = units[5-i]
-            display_map.add_map_array(row, col, ART_ARRAYS[f'{num1}-3x3'])
-            col -= 3
-        else:
-            num1 = units[5-i]
-            num2 = units[4-i]
-            display_map.add_map_array(row, col, ART_ARRAYS[f'{num1}-3x3'])
-            col -= 3
-            display_map.add_map_array(row, col, ART_ARRAYS[f'{num2}-3x3'])
-            if i != count-2:
-                col -= 2
-                display_map.add_map_array(row+2, col, np.array([['¤']]))
-            col -= 4
-    display_map.add_map_array(row, col, np.array([
+        x = 0
+        while units[x] == 0:  x+=1
+        count = 6-x
+    
+        row, col = ART_PLACES['last_3x3']
+        for i in range(0, count, 2):
+            if i == count-1:
+                num1 = units[5-i]
+                display_map.add_map_array(row, col, ART_ARRAYS[f'{num1}-3x3'])
+                col -= 3
+            else:
+                num1 = units[5-i]
+                num2 = units[4-i]
+                display_map.add_map_array(row, col, ART_ARRAYS[f'{num1}-3x3'])
+                col -= 3
+                display_map.add_map_array(row, col, ART_ARRAYS[f'{num2}-3x3'])
+                if i != count-2:
+                    col -= 2
+                    display_map.add_map_array(row+2, col, np.array([['¤']]))
+                col -= 4
+        display_map.add_map_array(row, col, np.array([
                                                     [' ', ' ', '/'],
                                                     [' ', '/', ' '],
                                                     ['/', ' ', ' ']
                                                 ]) )
-    terminal_display.update(display_map)
+        
+        terminal_display.update(display_map)
 
 
 def add_progress_bar(progress):
@@ -642,7 +647,8 @@ def song_view():
             else:
                 current_time = last_current_time + precise_time() - last_request_time
                 if get_playing_status(): add_progress_bar(current_time/song_length)
-                
+            
+            update_time(current_time)
             terminal_display.update(display_map)
         
         except KeyboardInterrupt:
