@@ -22,7 +22,7 @@ TIME_CHAR_LIST = ('y', 'w', 'd', 'h', 'm', 's')
 def secs_to_text(seconds:float) :
     seconds = int(seconds)
     text = ""
-    for i in range(len(TIME_CONVERT_LIST)):
+    for i in range(6):
         conv = TIME_CONVERT_LIST[i]
         if conv <= seconds:
             un = seconds//conv
@@ -33,7 +33,17 @@ def secs_to_text(seconds:float) :
 
 def secs_to_units(seconds:float) :
     seconds = int(seconds)
-    units = [0 for i in range()]
+    units = [0 for i in range(6)]
+    for i in range(3):
+        conv = TIME_CONVERT_LIST[3+i]
+        if conv <= seconds:
+            un = seconds//conv
+            seconds -= un*conv
+            s = un%10
+            units[i*2+1] = s
+            if un != s:
+                units[i*2] = (un-s)//10
+    return units
 
 DOT = (os.path.dirname(__file__)).replace('\\','/')
 
@@ -160,6 +170,7 @@ class TerminalDisplay:
             while precise_time() - start_time < stay_seconds :
                 pass
 
+
 class CustomImage:
     def __init__(self, image_array=np.array([])):
         self.array = np.array(image_array)
@@ -219,7 +230,7 @@ sp = spotipy.Spotify(
 
 
 
-ART_MAPS = {
+ART_ARRAYS = {
     '0-3x3' : (".o.", "| |", "'0'"),
     '1-3x3' : (".~1", "  |", "  |"),
     '2-3x3' : ("˛=,", " ,I", "2__"),
@@ -259,6 +270,7 @@ ART_MAPS = {
     'playlist' : [" "*47],
     'artists' : [" "*60],
     'track_name' : [" "*59],
+    '3x3_line' : [" "],
     'last_3x3' : [" "*3 for _ in range(3)],
     'hour_dots' : ["°" for _ in range(4)],
     '5x4_second_0' : [" "*5 for _ in range(4)],
@@ -268,9 +280,9 @@ ART_MAPS = {
     'divider_colon' : ("¤", "¤"),
 
 }
-for key in ART_MAPS.keys():
-    m = np.array([tuple(string) for string in ART_MAPS[key]])
-    ART_MAPS[key] = m
+for key in ART_ARRAYS.keys():
+    a = np.array([tuple(string) for string in ART_ARRAYS[key]])
+    ART_ARRAYS[key] = a
 
 ART_PLACES = {
     'no_shuffle'     : (32, 66),
@@ -305,17 +317,7 @@ ART_PLACES = {
 
 def place_art(art_name):
     row, col = ART_PLACES[art_name]
-    display_map.add_map_array(row, col, ART_MAPS[art_name])
-
-def pad_with_spaces(array):
-    rows, cols = array.shape
-    
-    result = np.empty((rows, cols * 2 - 1), dtype=array.dtype)
-    
-    result[:, ::2] = array
-    result[:, 1::2] = ' ' 
-    
-    return result
+    display_map.add_map_array(row, col, ART_ARRAYS[art_name])
 
 
 
@@ -397,12 +399,43 @@ def get_song_length():
     else:
         return float('inf')
 
+
 def get_time():
     if current and current['progress_ms']:
         current_time = current['progress_ms'] / 1000
         return current_time
     else:
         return 0
+
+def update_time():
+    units = secs_to_units(get_time())
+
+    x = 0
+    while units[x] == 0:  x+=1
+    count = 6-x
+
+    row, col = ART_PLACES['last_3x3']
+    for i in range(0, count, 2):
+        if i == count-1:
+            num1 = units[5-i]
+            display_map.add_map_array(row, col, ART_ARRAYS[f'{num1}-3x3'])
+            col -= 3
+        else:
+            num1 = units[5-i]
+            num2 = units[4-i]
+            display_map.add_map_array(row, col, ART_ARRAYS[f'{num1}-3x3'])
+            col -= 3
+            display_map.add_map_array(row, col, ART_ARRAYS[f'{num2}-3x3'])
+            if i != count-2:
+                col -= 2
+                display_map.add_map_array(row+2, col, np.array([['¤']]))
+            col -= 4
+    display_map.add_map_array(row, col, np.array([
+                                                    [' ', ' ', '/'],
+                                                    [' ', '/', ' '],
+                                                    ['/', ' ', ' ']
+                                                ]) )
+    terminal_display.update(display_map)
 
 
 def add_progress_bar(progress):
@@ -430,7 +463,7 @@ def update_next_up_tracks():
 
         next_up_tracks = []
 
-        track_length_limit = len(ART_MAPS['next_up_tracks'][0])
+        track_length_limit = len(ART_ARRAYS['next_up_tracks'][0])
         for track in next_9_tracks:
             track_name, artists = track
             artists_len = len(artists)
@@ -461,7 +494,6 @@ def update_next_up_tracks():
         display_map.add_map_array(row, col, next_up_tracks)
 
 
-
 def get_album_cover_url():
     if current:
         return current['item']['album']['images'][0]['url']
@@ -475,7 +507,7 @@ def download_image(url):
         custom_image = CustomImage(np.array(image))
         return custom_image
     except:
-        return CustomImage(ART_MAPS['cover_art'])
+        return CustomImage(ART_ARRAYS['cover_art'])
 
 def update_album_cover():
     if current:
@@ -506,7 +538,7 @@ def get_current_playlist_name():
         return " "
 
 def update_playlist_name():
-    playlist_name = get_current_playlist_name()[ :len(ART_MAPS['playlist'][0])]
+    playlist_name = get_current_playlist_name()[ :len(ART_ARRAYS['playlist'][0])]
     row, col = ART_PLACES['playlist']
     place_art('playlist')
     display_map.add_map_array(row, col, np.array([tuple(playlist_name)]))
@@ -519,7 +551,7 @@ def get_current_track_name():
         return " "
 
 def update_track_name():
-    track_name = get_current_track_name()[ :len(ART_MAPS['track_name'][0])]
+    track_name = get_current_track_name()[ :len(ART_ARRAYS['track_name'][0])]
     row, col = ART_PLACES['track_name']
     place_art('track_name')
     display_map.add_map_array(row, col, np.array([tuple(track_name)]))
@@ -535,7 +567,7 @@ def get_current_artists():
         return " "
 
 def update_artists():
-    artists = get_current_artists()[ :len(ART_MAPS['artists'][0])]
+    artists = get_current_artists()[ :len(ART_ARRAYS['artists'][0])]
     row, col = ART_PLACES['artists']
     place_art('artists')
     display_map.add_map_array(row, col, np.array([tuple(artists)]))
@@ -633,8 +665,10 @@ if __name__ == "__main__":
 
     display_map = CharacterMap(window_width, window_height, filler=' ')
 
-    song_view()
 
-    terminal_display.update()
+    song_view()
+            
+
+        
 
     print(colorama.Style.RESET_ALL) # End terminal formatting
