@@ -619,16 +619,14 @@ def song_view():
 
 
 
-    buffer = 0.1#seconds
+    buffer = 0.15#seconds
     last_request_time = 0
     current_time = 0
-    last_current_time = 0
+    last_calculated_time = 0
     song_length = float('inf')
 
     previous_name = None
-
-    avg_delta = 1
-    batch_size = 6
+    previous_playing_status = False
 
 
     while True:
@@ -636,41 +634,34 @@ def song_view():
             if buffer< precise_time() - last_request_time:
                 
                 current = sp.current_playback()
-                last_request_time = precise_time()
 
                 if current:
-                    song_length = get_song_length()
+                    playing_status = update_playing_status()
+
                     current_time = get_time()
-
-                    calculated_time = (last_current_time + precise_time() - last_request_time)
-                    avg_delta += (current_time - calculated_time)/batch_size
-
-                    last_current_time = current_time
+                    update_time(current_time)
 
                     update_playlist_name()
 
                     if previous_name != current['item']['name']:
                         update_album_cover()
                         update_next_up_tracks()
-                    
-                    update_track_name()
-                    update_artists()
+                        song_length = get_song_length()
+                        update_track_name()
+                        update_artists()                   
 
                     update_shuffle_status()
-                    update_playing_status()
                     update_liked_status()
 
                     add_progress_bar(current_time/song_length)
 
                     previous_name = current['item']['name']
+                    previous_playing_status = playing_status
                 else:
                     previous_name = None
             else:
-                current_time = last_current_time + precise_time() - last_request_time
-                last_request_time = precise_time()
-                if get_playing_status(): add_progress_bar(current_time/song_length)
+                current_time = last_calculated_time + precise_time() - last_request_time
             
-            update_time(current_time)
             terminal_display.update(display_map)
         
         except KeyboardInterrupt:
