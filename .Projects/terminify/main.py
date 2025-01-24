@@ -323,8 +323,6 @@ def place_art(art_name):
 
 
 
-
-
 current = None
 
 
@@ -343,6 +341,8 @@ def update_shuffle_status():
     if current:
         shuffle_status = get_shuffle_status()
         place_art(shuffle_status)
+
+        return shuffle_status
 
 def cycle_shuffle():
     if current:
@@ -381,7 +381,15 @@ def get_liked_status():
     if current:
         track_id = current['item']['id']
         liked = sp.current_user_saved_tracks_contains([track_id])[0]
+        
         return liked
+
+def update_liked_status():
+    if current:
+        liked_status = get_liked_status()
+        place_art('liked' if liked_status else 'like')
+        
+        return liked_status
 
 def like_unlike_current_song():
     if current:
@@ -411,11 +419,12 @@ def get_time():
 def update_time(secs):
     place_art('3x3_line')
 
-    if secs:
+    if 0<= secs:
         units = secs_to_units(secs)
 
-        x = 0
-        while units[x] == 0:  x+=1
+        for x in range(6):
+            if units[x] != 0:
+                break
         count = 6-x
     
         row, col = ART_PLACES['last_3x3']
@@ -548,6 +557,8 @@ def update_playlist_name():
     place_art('playlist')
     display_map.add_map_array(row, col, np.array([tuple(playlist_name)]))
 
+    return playlist_name
+
 
 def get_current_track_name():
     if current:
@@ -560,6 +571,8 @@ def update_track_name():
     row, col = ART_PLACES['track_name']
     place_art('track_name')
     display_map.add_map_array(row, col, np.array([tuple(track_name)]))
+    
+    return track_name
 
 
 def get_current_artists():
@@ -576,16 +589,17 @@ def update_artists():
     row, col = ART_PLACES['artists']
     place_art('artists')
     display_map.add_map_array(row, col, np.array([tuple(artists)]))
+
+    return artists
             
 
 
 def update_playing_status():
     if current:
-        place_art('pause' if get_playing_status() else 'resume')
-
-def update_liked_status():
-    if current:
-        place_art('liked' if get_liked_status() else 'like')
+        playing_status = get_playing_status()
+        place_art('pause' if playing_status else 'resume')
+        
+        return playing_status
 
 
 def song_view():
@@ -613,6 +627,9 @@ def song_view():
 
     previous_name = None
 
+    avg_delta = 1
+    batch_size = 6
+
 
     while True:
         try:
@@ -624,6 +641,10 @@ def song_view():
                 if current:
                     song_length = get_song_length()
                     current_time = get_time()
+
+                    calculated_time = (last_current_time + precise_time() - last_request_time)
+                    avg_delta += (current_time - calculated_time)/batch_size
+
                     last_current_time = current_time
 
                     update_playlist_name()
@@ -646,6 +667,7 @@ def song_view():
                     previous_name = None
             else:
                 current_time = last_current_time + precise_time() - last_request_time
+                last_request_time = precise_time()
                 if get_playing_status(): add_progress_bar(current_time/song_length)
             
             update_time(current_time)
@@ -653,6 +675,8 @@ def song_view():
         
         except KeyboardInterrupt:
             return 0
+        except:
+            pass
 
 
 
