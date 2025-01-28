@@ -14,10 +14,15 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import requests
 from io import BytesIO
+from colorama import Fore, Style
 
 
 TIME_CONVERT_LIST = (29030400, 604800, 86400, 3600, 60, 1)
 TIME_CHAR_LIST = ('y', 'w', 'd', 'h', 'm', 's')
+COLORS = [
+    Fore.BLUE, Fore.CYAN, Fore.GREEN,
+    Fore.MAGENTA, Fore.RED, Fore.WHITE, Fore.YELLOW
+]
 
 def secs_to_text(seconds:float) :
     seconds = int(seconds)
@@ -72,15 +77,21 @@ def highlight(var, for_seconds=10):
 
 
 class CharacterMap:
-    def __init__(self, width:int, height:int, d_list:tuple=None, filler:str=' '): 
+    def __init__(self, width:int, height:int, d_list:tuple=None, filler:str=' ', U1dtype=True): 
         if d_list:
             self.width = len(d_list[0])
             self.height = len(d_list)
-            self.array = np.array(d_list, dtype='<U1')
+            if U1dtype:
+                self.array = np.array(d_list, dtype='<U1')
+            else:
+                self.array = np.array(d_list, dtype=np.object_)
         else:
             self.width = width
             self.height = height
-            self.array = np.full(((height, width)), filler, dtype='<U1')
+            if U1dtype:
+                self.array = np.full(((height, width)), filler, dtype='<U1')
+            else:
+                self.array = np.full(((height, width)), filler, dtype=np.object_)
 
         self.filler = filler
     
@@ -213,6 +224,33 @@ class CustomImage:
         img_map.array[:] = np.array(OPAS)[indices]
         
         return img_map
+    
+    def to_colorized_map(self, target_width=-1, target_height=-1):
+        """if len(self.array.shape) == 2:  # Check if the image is already grayscale
+            self.array = cv2.cvtColor(self.array, cv2.COLOR_GRAY2RGB)"""
+
+        self.downscale(target_width, target_height)
+
+        colorized_map = CharacterMap(width=target_width, height=target_height, U1dtype=False)
+
+        for y in range(target_height):
+            for x in range(target_width):
+                r, g, b = self.array[y, x].astype(np.int32) # Convert to int32 to prevent overflow
+
+                # Calculate luminance (brightness)
+                luminance = 0.21 * r + 0.72 * g + 0.07 * b
+
+                # Map luminance to character
+                char_index = int(luminance / 256 * len(OPAS))
+                char_index = max(0, min(char_index, len(OPAS) - 1)) # Ensure index is within bounds
+                # Map color to a color from the palette
+                # Calculate average and ensure it's within 0-255 range
+                average_color = (r + g + b) // 3
+                color_index = int(average_color / 256 * len(COLORS))
+                color_index = max(0, min(color_index, len(COLORS) - 1)) # Ensure index is within bounds
+
+                colorized_map.array[y, x] = COLORS[color_index] + OPAS[char_index]
+        return colorized_map
 
 
 
@@ -526,7 +564,7 @@ def download_image(url):
 def update_album_cover():
     if current:
         album_cover_url = get_album_cover_url()
-        album_cover = download_image(album_cover_url).to_map(60,30)
+        album_cover = download_image(album_cover_url).to_colorized_map(60,30)
         row, col = ART_PLACES['cover_art']
         display_map.add_map_array(row, col, album_cover.array)
 
@@ -613,7 +651,7 @@ def song_view():
         'artists', 'track_name',
         'next_up', 'next_up_serials', 'next_up_tracks', 'next_up_xs',
         'hour_dots', '5x4_minute_1', '5x4_minute_0', 'divider_colon', '5x4_second_1', '5x4_second_0',
-        'no_shuffle', 'previous', 'resume', 'next', 'liked',
+        'no_shuffle', 'previous', 'resume', 'next', 'like',
     )
     for art in arts: place_art(art)
 
@@ -630,44 +668,44 @@ def song_view():
 
 
     while True:
-        try:
-            if buffer< precise_time() - last_request_time:
-                
-                current = sp.current_playback()
-
-                if current:
-                    playing_status = update_playing_status()
-
-                    current_time = get_time()
-                    update_time(current_time)
-
-                    update_playlist_name()
-
-                    if previous_name != current['item']['name']:
-                        update_album_cover()
-                        update_next_up_tracks()
-                        song_length = get_song_length()
-                        update_track_name()
-                        update_artists()                   
-
-                    update_shuffle_status()
-                    update_liked_status()
-
-                    add_progress_bar(current_time/song_length)
-
-                    previous_name = current['item']['name']
-                    previous_playing_status = playing_status
-                else:
-                    previous_name = None
-            else:
-                current_time = last_calculated_time + precise_time() - last_request_time
+        #try:
+        if buffer< precise_time() - last_request_time:
             
-            terminal_display.update(display_map)
+            current = sp.current_playback()
+
+            if current:
+                playing_status = update_playing_status()
+
+                current_time = get_time()
+                update_time(current_time)
+
+                update_playlist_name()
+
+                if previous_name != current['item']['name']:
+                    update_album_cover()
+                    update_next_up_tracks()
+                    song_length = get_song_length()
+                    update_track_name()
+                    update_artists()                   
+
+                update_shuffle_status()
+                update_liked_status()
+
+                add_progress_bar(current_time/song_length)
+
+                previous_name = current['item']['name']
+                previous_playing_status = playing_status
+            else:
+                previous_name = None
+        else:
+            current_time = last_calculated_time + precise_time() - last_request_time
         
-        except KeyboardInterrupt:
+        terminal_display.update(display_map)
+        
+        """except KeyboardInterrupt:
             return 0
         except:
-            pass
+            pass"""
 
 
 
@@ -684,12 +722,18 @@ if __name__ == "__main__":
 
     terminal_display = TerminalDisplay(window_height)
 
-    display_map = CharacterMap(window_width, window_height, filler=' ')
+    display_map = CharacterMap(window_width, window_height, filler=COLORS[0]+'.', U1dtype=False)
 
 
     song_view()
-            
 
-        
+    """album_cover_url = 'https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0'
+
+    img = download_image(album_cover_url)
+    album_cover = img.to_colorized_map(60,30)
+    row, col = ART_PLACES['cover_art']
+    #display_map.add_map_array(row, col, album_cover.array)
+
+    terminal_display.update(album_cover)"""
 
     print(colorama.Style.RESET_ALL) # End terminal formatting
