@@ -722,7 +722,7 @@ if __name__ == "__main__":
 
     terminal_display = TerminalDisplay(window_height)
 
-    display_map = CharacterMap(window_width, window_height, filler=COLORS[0]+'.', U1dtype=False)
+    display_map = CharacterMap(window_width, window_height, filler=COLORS[1]+'.', U1dtype=False)
 
 
     song_view()
