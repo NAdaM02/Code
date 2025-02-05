@@ -18,6 +18,9 @@ from io import BytesIO
 from colorama import Fore, Style
 from spotipy.exceptions import SpotifyException
 
+import logging
+logging.getLogger().setLevel(logging.ERROR)
+
 
 TIME_CONVERT_LIST = (29030400, 604800, 86400, 3600, 60, 1)
 TIME_CHAR_LIST = ('y', 'w', 'd', 'h', 'm', 's')
