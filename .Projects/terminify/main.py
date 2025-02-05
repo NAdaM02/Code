@@ -1,5 +1,6 @@
 from time import time as epoch_now
 from time import perf_counter as precise_time
+from time import sleep as wait
 from time import sleep as wait_seconds
 import time
 import os
@@ -15,12 +16,13 @@ from spotipy.oauth2 import SpotifyOAuth
 import requests
 from io import BytesIO
 from colorama import Fore, Style
+from spotipy.exceptions import SpotifyException
 
 
 TIME_CONVERT_LIST = (29030400, 604800, 86400, 3600, 60, 1)
 TIME_CHAR_LIST = ('y', 'w', 'd', 'h', 'm', 's')
 COLORS = [
-    Fore.BLUE, Fore.CYAN, Fore.GREEN,
+    Fore.BLACK, Fore.BLUE, Fore.CYAN, Fore.GREEN,
     Fore.MAGENTA, Fore.RED, Fore.WHITE, Fore.YELLOW
 ]
 
@@ -59,8 +61,7 @@ THRESHOLDS = (19.92, 36.93, 39.75, 39.84, 42.89, 53.66, 54.4, 62.83, 69.53, 74.1
 CHAR_WIDTH_PER_HEIGHT = 78/155
 
 
-
-def print_separate(val_1, space_between:str, val_2):
+def print_separate(val_1:any, space_between:str, val_2:any):
     val_1_string = str(val_1)
     val_1_len = len(val_1_string)
 
@@ -68,7 +69,7 @@ def print_separate(val_1, space_between:str, val_2):
 
     stdout.write(val_1_string + space_between[val_1_len : ] + val_2_string)
 
-def highlight(var, for_seconds=10):
+def highlight(var:any, for_seconds:float= 10):
     os.system('cls')
     print()
     print(var)
@@ -77,7 +78,7 @@ def highlight(var, for_seconds=10):
 
 
 class CharacterMap:
-    def __init__(self, width:int, height:int, d_list:tuple=None, filler:str=' ', U1dtype=True): 
+    def __init__(self, width:int, height:int, d_list:tuple= None, filler:str= ' ', U1dtype:bool= True): 
         if d_list:
             self.width = len(d_list[0])
             self.height = len(d_list)
@@ -122,20 +123,35 @@ class CharacterMap:
 
         return self.array[first_rows:last_rows+1, first_columns:last_columns+1]
 
-    def add_map_array(self, row:int, col:int, added_array:np.array, exclude_chars:tuple=()):
+    def add_map_array(self, position:tuple= ('row','col'), added_array:np.array= (), exclude_chars:tuple= ()):
         height, width = self.array.shape
         added_height, added_width = added_array.shape
+        row, col = position
 
-        start_row = max(0, row); end_row = min(height, row + added_height); start_col = max(0, col); end_col = min(width, col + added_width)
-        local_start_row = max(0, -row); local_end_row = min(added_height, height - row); local_start_col = max(0, -col); local_end_col = min(added_width, width - col)
+        start_row, end_row = max(0, row), min(height, row + added_height)
+        start_col, end_col = max(0, col), min(width, col + added_width)
 
-        mask = ~np.isin(added_array[local_start_row:local_end_row, local_start_col:local_end_col], exclude_chars)
+        local_start_row, local_end_row = max(0, -row), min(added_height, height - row)
+        local_start_col, local_end_col = max(0, -col), min(added_width, width - col)
 
-        self.array[start_row:end_row, start_col:end_col][mask] = added_array[local_start_row:local_end_row, local_start_col:local_end_col][mask]
-        
+        target_region = self.array[start_row:end_row, start_col:end_col]
+        source_region = added_array[local_start_row:local_end_row, local_start_col:local_end_col]
+
+        # Ensure dtype is object to preserve ANSI escape codes
+        if self.array.dtype != np.object_:
+            self.array = self.array.astype(np.object_)
+
+        if exclude_chars:
+            for i in range(target_region.shape[0]):
+                for j in range(target_region.shape[1]):
+                    if source_region[i, j] not in exclude_chars:
+                        target_region[i, j] = source_region[i, j]
+        else:
+            self.array[start_row:end_row, start_col:end_col] = source_region
+
         return self.array
     
-    def replace(self, replace_what=',', replace_with=' '):
+    def replace(self, replace_what:str= ',', replace_with:str= ' '):
         self.array[self.array == replace_what] = replace_with
         
         return self.array
@@ -143,7 +159,7 @@ class CharacterMap:
     def render_char(self, char_width:int, char_height:int, char_col:int, char_row:int):
         shown = (0-char_width <= char_col <= self.array.width) and (0-char_height <= char_row <= self.array.height)
         if shown:
-            self.array.add_map_array(col=int(char_col), row=int(char_row), added_array=self.array, exclude_chars=(" "))
+            self.array.add_map_array((int(char_col), int(char_row)), self.array, exclude_chars=(" "))
         
         return shown
 
@@ -168,7 +184,7 @@ class TerminalDisplay:
         stdout.write(output)
         stdout.flush()
 
-    def update(self, display_map:CharacterMap, fps:float=0):
+    def update(self, display_map:CharacterMap, fps:float= 0):
 
         start_time = precise_time()
         if fps == 0:
@@ -183,7 +199,7 @@ class TerminalDisplay:
 
 
 class CustomImage:
-    def __init__(self, image_array=np.array([])):
+    def __init__(self, image_array:np.array= ()):
         self.array = np.array(image_array)
 
     def gray(self):
@@ -208,14 +224,14 @@ class CustomImage:
         self.array = np.array(take_screenshot())
         return self
     
-    def save_as_img(self, name:str='image'):
+    def save_as_img(self, name:str= 'image'):
         image = Image.fromarray(self.array)
         return image.save(f'{name}.png')
     
-    def save_as_text(self, name:str='text'):
+    def save_as_text(self, name:str= 'text'):
         return np.savetxt(f'{name}.txt', self.array, fmt='%f', delimiter=' ')
     
-    def to_map(self, target_width=-1, target_height=-1, grayed=False, sized=False):
+    def to_map(self, target_width:int= -1, target_height:int= -1, grayed:bool= False, sized:bool= False):
         if not grayed: self.gray()
         if not sized: self.downscale(target_width, target_height)
 
@@ -225,32 +241,73 @@ class CustomImage:
         
         return img_map
     
-    def to_colorized_map(self, target_width=-1, target_height=-1):
-        """if len(self.array.shape) == 2:  # Check if the image is already grayscale
-            self.array = cv2.cvtColor(self.array, cv2.COLOR_GRAY2RGB)"""
-
+    def to_colorized_map(self, target_width:int= -1, target_height:int= -1):
         self.downscale(target_width, target_height)
 
         colorized_map = CharacterMap(width=target_width, height=target_height, U1dtype=False)
 
         for y in range(target_height):
             for x in range(target_width):
-                r, g, b = self.array[y, x].astype(np.int32) # Convert to int32 to prevent overflow
+                r, g, b = self.array[y, x].astype(np.int32)
 
-                # Calculate luminance (brightness)
-                luminance = 0.21 * r + 0.72 * g + 0.07 * b
+                luminance = 0.299 * r + 0.587 * g + 0.114 * b  
 
-                # Map luminance to character
-                char_index = int(luminance / 256 * len(OPAS))
-                char_index = max(0, min(char_index, len(OPAS) - 1)) # Ensure index is within bounds
-                # Map color to a color from the palette
-                # Calculate average and ensure it's within 0-255 range
-                average_color = (r + g + b) // 3
-                color_index = int(average_color / 256 * len(COLORS))
-                color_index = max(0, min(color_index, len(COLORS) - 1)) # Ensure index is within bounds
+                char_index = np.digitize(luminance, THRESHOLDS, right=True)
+                char_index = max(0, min(char_index, len(OPAS) - 1))
+                ascii_char = OPAS[char_index]
 
-                colorized_map.array[y, x] = COLORS[color_index] + OPAS[char_index]
+                total = max(r + g + b, 1)
+                r_ratio, g_ratio, b_ratio = r / total, g / total, b / total  
+
+                if luminance > 200:
+                    color = Fore.WHITE
+                elif luminance > 150:
+                    if r_ratio > 0.5:
+                        color = Fore.LIGHTRED_EX
+                    elif g_ratio > 0.5:
+                        color = Fore.LIGHTGREEN_EX
+                    elif b_ratio > 0.5:
+                        color = Fore.LIGHTBLUE_EX
+                    else:
+                        color = Fore.LIGHTWHITE_EX
+                elif luminance > 100:
+                    if r_ratio > 0.5 and g_ratio > 0.4:
+                        color = Fore.LIGHTYELLOW_EX
+                    elif g_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.LIGHTCYAN_EX
+                    elif r_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.LIGHTMAGENTA_EX
+                    elif r_ratio > 0.5:
+                        color = Fore.RED
+                    elif g_ratio > 0.5:
+                        color = Fore.GREEN
+                    elif b_ratio > 0.5:
+                        color = Fore.BLUE
+                    else:
+                        color = Fore.LIGHTBLACK_EX
+                elif luminance > 50:
+                    if r_ratio > 0.5 and g_ratio > 0.4:
+                        color = Fore.YELLOW
+                    elif g_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.CYAN
+                    elif r_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.MAGENTA
+                    elif r_ratio > 0.5:
+                        color = Fore.RED
+                    elif g_ratio > 0.5:
+                        color = Fore.GREEN
+                    elif b_ratio > 0.5:
+                        color = Fore.BLUE
+                    else:
+                        color = Fore.BLACK
+                else:
+                    color = Fore.BLACK
+
+                colorized_map.array[y, x] = color + ascii_char + Fore.WHITE
+
         return colorized_map
+
+
 
 
 
@@ -265,7 +322,16 @@ sp = spotipy.Spotify(
     )
 )
 
-
+def safe_spotify_request(call, *args, **kwargs):
+    for i in range(5):
+        try:
+            return call(*args, **kwargs)
+        except SpotifyException as e:
+            if e.http_status == 429:  # Rate limit error
+                retry_after = int(e.headers.get("Retry-After", 5))  # Get wait time
+                time.sleep(retry_after)
+            else:
+                return
 
 
 ART_ARRAYS = {
@@ -279,16 +345,16 @@ ART_ARRAYS = {
     '7-3x3' : ("\"\"7", " / ", "*  "),
     '8-3x3' : (",o,", ",8,", "˙o˙"),
     '9-3x3' : (".o,", "´~9", " / "),
-    '0-5x4'  : (),
-    '1-5x4'  : (),
-    '2-5x4'  : (),
-    '3-5x4'  : (),
-    '4-5x4'  : (),
-    '5-5x4'  : (),
-    '6-5x4'  : (),
-    '7-5x4'  : (),
-    '8-5x4'  : (),
-    '9-5x4'  : (),
+    '0-5x4': (" /¯\\ ", "|   |", "|   |", " \\_/ "),
+    '1-5x4': ("  |  ", " /|  ", "  |  ", "  |  "),
+    '2-5x4': (" /¯\\ ", "   / ", "  /  ", " /___"),
+    '3-5x4': (" /¯\\ ", "   / ", "  -< ", " \\_/ "),
+    '4-5x4': ("   | ", "  /| ", " /¯|_", "   | "),
+    '5-5x4': (" /¯¯ ", "|__  ", "   \\ ", " \\_/ "),
+    '6-5x4': (" /¯¯ ", "|__  ", "|  \\ ", " \\_/ "),
+    '7-5x4': ("¯¯/¯ ", "  /  ", " /   ", "/    "),
+    '8-5x4': (" /¯\\ ", "|_ _|", "|   |", " \\_/ "),
+    '9-5x4': (" /¯\\ ", "|   |", " \\__|", "  ¯/ "),
     'previous' : (" .-", "<:|", " ˙-"),
     'pause' :    ("¤ ¤", "O O", "¤ ¤"),
     'resume' :   ("¤. ", "O]>", "¤˙ "),
@@ -318,45 +384,47 @@ ART_ARRAYS = {
     'divider_colon' : ("¤", "¤"),
 
 }
+def contracted_art_to_array(art):
+    return np.array([tuple(string) for string in art])
+
 for key in ART_ARRAYS.keys():
-    a = np.array([tuple(string) for string in ART_ARRAYS[key]])
-    ART_ARRAYS[key] = a
+    ART_ARRAYS[key] = contracted_art_to_array(ART_ARRAYS[key])
 
 ART_PLACES = {
-    'no_shuffle'     : (32, 66),
-    'shuffle'        : (32, 66),
-    'smart_shuffle'  : (32, 66),
-    'previous'      : (32, 73),
-    'pause'          : (32, 78),
-    'resume'         : (32, 78),
-    'next'          : (32, 83),
-    'like'           : (32, 88),
-    'liked'          : (32, 88),
+    'no_shuffle'     : (33, 66),
+    'shuffle'        : (33, 66),
+    'smart_shuffle'  : (33, 66),
+    'previous'      : (33, 73),
+    'pause'          : (33, 78),
+    'resume'         : (33, 78),
+    'next'          : (33, 83),
+    'like'           : (33, 88),
+    'liked'          : (33, 88),
     'cover_art' : (2, 2),
-    'progress_bar' : (31, 2),
+    'progress_bar' : (32, 2),
     'next_up'         : (1,63),
     'next_up_serials' : (2, 63),
     'next_up_tracks'  : (2, 66),
     'next_up_xs'      : (2, 95),
     'playing_from' : (0, 1),
     'playlist' : (0, 15),
-    'artists'  : (32, 2),
-    'track_name' : (33, 3),
-    '3x3_line' : (28, 64),
-    'last_3x3' : (28, 90),
-    'hour_dots' : (23, 63),
-    '5x4_second_0' : (23, 88),
-    '5x4_second_1' : (23, 81),
-    '5x4_minute_0' : (23, 73),
-    '5x4_minute_1' : (23, 66),
-    'divider_colon' : (24, 79),
+    'artists'  : (33, 2),
+    'track_name' : (34, 3),
+    '3x3_line' : (29, 64),
+    'last_3x3' : (29, 90),
+    'hour_dots' : (24, 63),
+    '5x4_second_0' : (24, 88),
+    '5x4_second_1' : (24, 81),
+    '5x4_minute_0' : (24, 73),
+    '5x4_minute_1' : (24, 66),
+    'divider_colon' : (25, 79),
 }
 
 
 
 def place_art(art_name):
     row, col = ART_PLACES[art_name]
-    display_map.add_map_array(row, col, ART_ARRAYS[art_name])
+    display_map.add_map_array((row, col), ART_ARRAYS[art_name])
 
 
 
@@ -446,6 +514,37 @@ def get_song_length():
     else:
         return float('inf')
 
+def update_song_length(secs):
+    for u in ('second', 'minute'):
+        for i in range(2):
+            place_art(f'5x4_{u}_{i}')
+    place_art('hour_dots')
+
+    if 0<= secs:
+        units = secs_to_units(secs)
+
+        second_0_art = ART_ARRAYS[f'{units[5]}-5x4']
+        second_1_art = ART_ARRAYS[f'{units[4]}-5x4']
+        display_map.add_map_array(ART_PLACES['5x4_second_0'], second_0_art)
+        display_map.add_map_array(ART_PLACES['5x4_second_1'], second_1_art)
+
+        h1, h0, m1, m0 = (0< units[i] for i in range(4))
+        if h1 or h0:
+            hour_dots = contracted_art_to_array(["@" for _ in range(min(4, units[1]+units[0]))])
+            minute_0_art = ART_ARRAYS[f'{units[3]}-5x4']
+            minute_1_art = ART_ARRAYS[f'{units[2]}-5x4']
+            display_map.add_map_array(ART_PLACES['hour_dots'], hour_dots)
+            display_map.add_map_array(ART_PLACES['5x4_minute_0'], minute_0_art)
+            display_map.add_map_array(ART_PLACES['5x4_minute_1'], minute_1_art)
+        if m0:
+            minute_0_art = ART_ARRAYS[f'{units[3]}-5x4']
+            if m1:
+                minute_1_art = ART_ARRAYS[f'{units[2]}-5x4']
+                display_map.add_map_array(ART_PLACES['5x4_minute_1'], minute_1_art)
+            display_map.add_map_array(ART_PLACES['5x4_minute_0'], minute_0_art)
+
+        terminal_display.update(display_map)
+
 
 def get_time():
     if current and current['progress_ms']:
@@ -469,19 +568,19 @@ def update_time(secs):
         for i in range(0, count, 2):
             if i == count-1:
                 num1 = units[5-i]
-                display_map.add_map_array(row, col, ART_ARRAYS[f'{num1}-3x3'])
+                display_map.add_map_array((row, col), ART_ARRAYS[f'{num1}-3x3'])
                 col -= 3
             else:
                 num1 = units[5-i]
                 num2 = units[4-i]
-                display_map.add_map_array(row, col, ART_ARRAYS[f'{num1}-3x3'])
+                display_map.add_map_array((row, col), ART_ARRAYS[f'{num1}-3x3'])
                 col -= 3
-                display_map.add_map_array(row, col, ART_ARRAYS[f'{num2}-3x3'])
+                display_map.add_map_array((row, col), ART_ARRAYS[f'{num2}-3x3'])
                 if i != count-2:
                     col -= 2
-                    display_map.add_map_array(row+2, col, np.array([['¤']]))
+                    display_map.add_map_array((row+2, col), np.array([['¤']]))
                 col -= 4
-        display_map.add_map_array(row, col, np.array([
+        display_map.add_map_array((row, col), np.array([
                                                     [' ', ' ', '/'],
                                                     [' ', '/', ' '],
                                                     ['/', ' ', ' ']
@@ -494,9 +593,7 @@ def add_progress_bar(progress):
     progress = round(progress*60)
     progress_bar_string = "¤"*(progress-1) + "@" + "-"*(60-progress)
 
-    row, col = ART_PLACES['progress_bar']
-
-    display_map.add_map_array(row, col, np.array([tuple(progress_bar_string)]))
+    display_map.add_map_array(ART_PLACES['progress_bar'], np.array([tuple(progress_bar_string)]))
 
 
 def get_next_up_tracks():
@@ -541,9 +638,8 @@ def update_next_up_tracks():
         place_art('next_up_tracks')
 
         next_up_tracks = np.array([tuple(string) for string in next_up_tracks])
-        row, col = ART_PLACES['next_up_tracks']
 
-        display_map.add_map_array(row, col, next_up_tracks)
+        display_map.add_map_array(ART_PLACES['next_up_tracks'], next_up_tracks)
 
 
 def get_album_cover_url():
@@ -563,10 +659,12 @@ def download_image(url):
 
 def update_album_cover():
     if current:
+        """img = download_image('https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0')
+        album_cover = img.to_colorized_map(60,30)"""
         album_cover_url = get_album_cover_url()
-        album_cover = download_image(album_cover_url).to_colorized_map(60,30)
-        row, col = ART_PLACES['cover_art']
-        display_map.add_map_array(row, col, album_cover.array)
+        album_cover = download_image(album_cover_url).to_colorized_map(60,30)        
+
+        display_map.add_map_array(ART_PLACES['cover_art'], album_cover.array)
 
 
 def get_current_playlist_name():
@@ -591,9 +689,9 @@ def get_current_playlist_name():
 
 def update_playlist_name():
     playlist_name = get_current_playlist_name()[ :len(ART_ARRAYS['playlist'][0])]
-    row, col = ART_PLACES['playlist']
     place_art('playlist')
-    display_map.add_map_array(row, col, np.array([tuple(playlist_name)]))
+
+    display_map.add_map_array(ART_PLACES['playlist'], np.array([tuple(playlist_name)]))
 
     return playlist_name
 
@@ -606,9 +704,9 @@ def get_current_track_name():
 
 def update_track_name():
     track_name = get_current_track_name()[ :len(ART_ARRAYS['track_name'][0])]
-    row, col = ART_PLACES['track_name']
     place_art('track_name')
-    display_map.add_map_array(row, col, np.array([tuple(track_name)]))
+
+    display_map.add_map_array(ART_PLACES['track_name'], np.array([tuple(track_name)]))
     
     return track_name
 
@@ -624,9 +722,9 @@ def get_current_artists():
 
 def update_artists():
     artists = get_current_artists()[ :len(ART_ARRAYS['artists'][0])]
-    row, col = ART_PLACES['artists']
     place_art('artists')
-    display_map.add_map_array(row, col, np.array([tuple(artists)]))
+
+    display_map.add_map_array(ART_PLACES['artists'], np.array([tuple(artists)]))
 
     return artists
             
@@ -671,13 +769,10 @@ def song_view():
         #try:
         if buffer< precise_time() - last_request_time:
             
-            current = sp.current_playback()
+            current = safe_spotify_request(sp.current_playback)
 
             if current:
                 playing_status = update_playing_status()
-
-                current_time = get_time()
-                update_time(current_time)
 
                 update_playlist_name()
 
@@ -685,16 +780,21 @@ def song_view():
                     update_album_cover()
                     update_next_up_tracks()
                     song_length = get_song_length()
+                    update_song_length(song_length)
                     update_track_name()
-                    update_artists()                   
+                    update_artists()
 
                 update_shuffle_status()
                 update_liked_status()
+
+                current_time = get_time()
+                update_time(current_time)
 
                 add_progress_bar(current_time/song_length)
 
                 previous_name = current['item']['name']
                 previous_playing_status = playing_status
+
             else:
                 previous_name = None
         else:
@@ -713,7 +813,7 @@ def song_view():
 
 if __name__ == "__main__":
 
-    colorama.init() # Initialize terminal formatting
+    colorama.init(autoreset=True) # Initialize terminal formatting
 
     window_width = 96
     window_height = 36
@@ -722,8 +822,7 @@ if __name__ == "__main__":
 
     terminal_display = TerminalDisplay(window_height)
 
-    display_map = CharacterMap(window_width, window_height, filler=COLORS[1]+'.', U1dtype=False)
-
+    display_map = CharacterMap(window_width, window_height, filler=' ', U1dtype=False)
 
     song_view()
 
@@ -731,9 +830,8 @@ if __name__ == "__main__":
 
     img = download_image(album_cover_url)
     album_cover = img.to_colorized_map(60,30)
-    row, col = ART_PLACES['cover_art']
-    #display_map.add_map_array(row, col, album_cover.array)
+    display_map.add_map_array(ART_PLACES['cover_art'], album_cover.array)
 
-    terminal_display.update(album_cover)"""
+    terminal_display.update(display_map)"""
 
     print(colorama.Style.RESET_ALL) # End terminal formatting
