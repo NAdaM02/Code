@@ -337,27 +337,92 @@ def safe_spotify_request(call, *args, **kwargs):
                 return
 
 
-ART_ARRAYS = {
+
+
+
+ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
     '0-3x3' : (".o.", "| |", "'0'"),
     '1-3x3' : (".~1", "  |", "  |"),
     '2-3x3' : ("˛=,", " ,I", "2__"),
-    '3-3x3' : ("˙´\\", " ~3", ".˛/"),
+    '3-3x3' : ("˙´\\", " *3", ".˛/"),
     '4-3x3' : ("/  ", "4+*", " | "),
     '5-3x3' : ("_~~", "5o.", "--/"),
     '6-3x3' : ("˛o.", "6*.", "˙o˙"),
     '7-3x3' : ("\"\"7", " / ", "*  "),
     '8-3x3' : (",o,", ",8,", "˙o˙"),
     '9-3x3' : (".o,", "´~9", " / "),
-    '0-5x4': (" /¯\\ ", "|   |", "|   |", " \\_/ "),
-    '1-5x4': ("  |  ", " /|  ", "  |  ", "  |  "),
-    '2-5x4': (" /¯\\ ", "   / ", "  /  ", " /___"),
-    '3-5x4': (" /¯\\ ", "   / ", "  -< ", " \\_/ "),
-    '4-5x4': ("   | ", "  /| ", " /¯|_", "   | "),
-    '5-5x4': (" /¯¯ ", "|__  ", "   \\ ", " \\_/ "),
-    '6-5x4': (" /¯¯ ", "|__  ", "|  \\ ", " \\_/ "),
-    '7-5x4': ("¯¯/¯ ", "  /  ", " /   ", "/    "),
-    '8-5x4': (" /¯\\ ", "|_ _|", "|   |", " \\_/ "),
-    '9-5x4': (" /¯\\ ", "|   |", " \\__|", "  ¯/ "),
+
+    #'0-5x4' :  (" /¯\\ ", "|   |", "|   |", " \\_/ "),  #["  ╷ ", "╶─┤ ", "  │ ", "  │ ", "  │ "],
+    #'1-5x4' :  ("  |  ", " /|  ", "  |  ", "  |  "),    #["╭──╮", "╵  │", "╭──╯", "│   ", "└──┘"],
+    #'2-5x4' :  (" /¯\\ ", "   / ", "  /  ", " /___"),   #["╭──╮", "╵  │", " ╶─┤", "╷  │", "╰──╯"],
+    #'3-5x4' :  (" /¯\\ ", "   / ", "  -< ", " \\_/ "),  #["╭   ", "│ ╷ ", "└─┼╴", "  │ ", "  │ "],
+    #'4-5x4' :  ("   | ", "  /| ", " /¯|_", "   | "),    #["┌──╴", "│   ", "└──╮", "   │", "╰──╯"],
+    #'5-5x4' :  (" /¯¯ ", "|__  ", "   \\ ", " \\_/ "),  #["╭──╮", "│  ╵", "├──╮", "│  │", "╰──╯"],
+    #'6-5x4' :  (" /¯¯ ", "|__  ", "|  \\ ", " \\_/ "),  #["┌──┐", "╵  │", "  ╭╯", "  │ ", "  │ "],
+    #'7-5x4' :  ("¯¯/¯ ", "  /  ", " /   ", "/    "),    #["╭──╮", "│  │", "├──┤", "│  │", "╰──╯"],
+    #'8-5x4' :  (" /¯\\ ", "|_ _|", "|   |", " \\_/ "),  #["╭──╮", "│  │", "╰──┤", "╷  │", "╰──╯"],
+    #'9-5x4' :  (" /¯\\ ", "|   |", " \\__|", "  ¯/ "),  #["╭──╮", "│ /│", "│  │", "│/ │", "╰──╯"],
+
+    '0-5x4' :  
+    (",---,",
+     "|   |",
+     "|   |",
+     "'___'"),
+
+    '1-5x4' :  
+    ("  /| ", 
+     " / | ", 
+     "   | ", 
+     "   | "),
+
+    '2-5x4' :  
+    (" .-~,", 
+     "   / ", 
+     "  /  ", 
+     " /___"),
+
+    '3-5x4' :  
+    (" ,~, ", 
+     "   / ", 
+     "  ˝\\ ", 
+     " \\_/ "),
+
+    '4-5x4' :  
+    ("  /  ", 
+     " / , ", 
+     "/__4_", 
+     "   | "),
+
+    '5-5x4' :  
+    (" ,--*", 
+     " \\__ ", 
+     "    \\", 
+     " \\__/"),
+
+    '6-5x4' :  
+    (" ,~- ", 
+     "í    ", 
+     "|¨˝\\ ", 
+     "'__/ "),
+
+    '7-5x4' :  
+    (" ---7", 
+     "   / ", 
+     "  /  ", 
+     " /   "),
+    
+    '8-5x4' :  
+    (" /~\\ ", 
+     " \\_/ ", 
+     " / \\ ", 
+     " \\_/ "),
+
+    '9-5x4' :  
+    (" ,--,", 
+     " |  |", 
+     "  '*}", 
+     " ._/ "),
+
     'previous' : (" .-", "<:|", " ˙-"),
     'pause' :    ("¤ ¤", "O O", "¤ ¤"),
     'resume' :   ("¤. ", "O]>", "¤˙ "),
@@ -379,7 +444,7 @@ ART_ARRAYS = {
     'track_name' : [" "*59],
     '3x3_line' : [" "*29 for _ in range(3)],
     'last_3x3' : [" "*3 for _ in range(3)],
-    'hour_dots' : ["°" for _ in range(4)],
+    'hour_dots' : [" " for _ in range(4)],
     '5x4_second_0' : [" "*5 for _ in range(4)],
     '5x4_second_1' : [" "*5 for _ in range(4)],
     '5x4_minute_0' : [" "*5 for _ in range(4)],
@@ -387,6 +452,8 @@ ART_ARRAYS = {
     'divider_colon' : ("¤", "¤"),
 
 }
+
+
 def contracted_art_to_array(art):
     return np.array([tuple(string) for string in art])
 
@@ -533,7 +600,8 @@ def update_song_length(secs):
 
         h1, h0, m1, m0 = (0< units[i] for i in range(4))
         if h1 or h0:
-            hour_dots = contracted_art_to_array(["@" for _ in range(min(4, units[1]+units[0]))])
+            dot_count = min(4, units[1]+units[0])
+            hour_dots = contracted_art_to_array(["@" for _ in range(dot_count)] + ["˙" for _ in range(4-dot_count)])
             minute_0_art = ART_ARRAYS[f'{units[3]}-5x4']
             minute_1_art = ART_ARRAYS[f'{units[2]}-5x4']
             display_map.add_map_array(ART_PLACES['hour_dots'], hour_dots)
@@ -758,7 +826,7 @@ def song_view():
 
 
 
-    buffer = 0.15#seconds
+    buffer = 0.13#seconds
     last_request_time = 0
     current_time = 0
     last_calculated_time = 0
@@ -779,7 +847,7 @@ def song_view():
 
                 update_playlist_name()
 
-                if previous_name != current['item']['name']:
+                if current['item'] and previous_name != current['item']['name']:
                     update_album_cover()
                     update_next_up_tracks()
                     song_length = get_song_length()
@@ -802,13 +870,14 @@ def song_view():
                 previous_name = None
         else:
             current_time = last_calculated_time + precise_time() - last_request_time
+            update_time(current_time)
         
         terminal_display.update(display_map)
         
-        """except KeyboardInterrupt:
-            return 0
-        except:
-            pass"""
+        #except KeyboardInterrupt:
+        #    return 0
+        #except:
+        #    pass
 
 
 
