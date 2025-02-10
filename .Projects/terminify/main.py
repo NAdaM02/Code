@@ -309,6 +309,72 @@ class CustomImage:
                 colorized_map.array[y, x] = color + ascii_char + Fore.WHITE
 
         return colorized_map
+    
+    def to_colorized_map(self, target_width:int= -1, target_height:int= -1):
+        self.downscale(target_width, target_height)
+
+        colorized_map = CharacterMap(width=target_width, height=target_height, U1dtype=False)
+
+        for y in range(target_height):
+            for x in range(target_width):
+                r, g, b = self.array[y, x].astype(np.int32)
+
+                luminance = 0.299 * r + 0.587 * g + 0.114 * b  
+
+                char_index = np.digitize(luminance, THRESHOLDS, right=True)
+                char_index = max(0, min(char_index, len(OPAS) - 1))
+                ascii_char = OPAS[char_index]
+
+                total = max(r + g + b, 1)
+                r_ratio, g_ratio, b_ratio = r / total, g / total, b / total  
+
+                if luminance > 200:
+                    color = Fore.WHITE
+                elif luminance > 150:
+                    if r_ratio > 0.5:
+                        color = Fore.LIGHTRED_EX
+                    elif g_ratio > 0.5:
+                        color = Fore.LIGHTGREEN_EX
+                    elif b_ratio > 0.5:
+                        color = Fore.LIGHTBLUE_EX
+                    else:
+                        color = Fore.LIGHTWHITE_EX
+                elif luminance > 100:
+                    if r_ratio > 0.5 and g_ratio > 0.4:
+                        color = Fore.LIGHTYELLOW_EX
+                    elif g_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.LIGHTCYAN_EX
+                    elif r_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.LIGHTMAGENTA_EX
+                    elif r_ratio > 0.5:
+                        color = Fore.RED
+                    elif g_ratio > 0.5:
+                        color = Fore.GREEN
+                    elif b_ratio > 0.5:
+                        color = Fore.BLUE
+                    else:
+                        color = Fore.LIGHTBLACK_EX
+                elif luminance > 50:
+                    if r_ratio > 0.5 and g_ratio > 0.4:
+                        color = Fore.YELLOW
+                    elif g_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.CYAN
+                    elif r_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.MAGENTA
+                    elif r_ratio > 0.5:
+                        color = Fore.RED
+                    elif g_ratio > 0.5:
+                        color = Fore.GREEN
+                    elif b_ratio > 0.5:
+                        color = Fore.BLUE
+                    else:
+                        color = Fore.BLACK
+                else:
+                    color = Fore.BLACK
+
+                colorized_map.array[y, x] = color + ascii_char + Fore.WHITE
+
+        return colorized_map
 
 
 
