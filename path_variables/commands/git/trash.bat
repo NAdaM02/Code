@@ -9,11 +9,7 @@ cd %REPO_PATH%
 echo ❯ Trashing and Pulling %REPO_PATH%
 echo.
 
-git checkout -- .
-
-git reset --hard origin/main
-
-git clean -fd
+git reset main
 
 git pull
 
