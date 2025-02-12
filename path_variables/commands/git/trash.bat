@@ -9,7 +9,8 @@ cd %REPO_PATH%
 echo ❯ Trashing and Pulling %REPO_PATH%
 echo.
 
-git restore .
+git clean -df
+git checkout -- .
 
 git pull
 
