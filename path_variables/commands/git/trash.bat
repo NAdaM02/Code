@@ -9,7 +9,7 @@ cd %REPO_PATH%
 echo ❯ Trashing and Pulling %REPO_PATH%
 echo.
 
-git reset main
+git restore .
 
 git pull
 
