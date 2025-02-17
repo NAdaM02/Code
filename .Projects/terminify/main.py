@@ -24,10 +24,6 @@ logging.getLogger().setLevel(logging.ERROR)
 
 TIME_CONVERT_LIST = (29030400, 604800, 86400, 3600, 60, 1)
 TIME_CHAR_LIST = ('y', 'w', 'd', 'h', 'm', 's')
-COLORS = [
-    Fore.BLACK, Fore.BLUE, Fore.CYAN, Fore.GREEN,
-    Fore.MAGENTA, Fore.RED, Fore.WHITE, Fore.YELLOW
-]
 
 def secs_to_text(seconds:float) :
     seconds = int(seconds)
@@ -310,8 +306,8 @@ class CustomImage:
 
         return colorized_map
     
-    def to_colorized_map(self, target_width:int= -1, target_height:int= -1):
-        self.downscale(target_width, target_height)
+    def to_shape_map(self, target_width:int= -1, target_height:int= -1):
+        self.downscale(target_width*3, target_height*3)
 
         colorized_map = CharacterMap(width=target_width, height=target_height, U1dtype=False)
 

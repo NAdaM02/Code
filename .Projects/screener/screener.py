@@ -10,6 +10,7 @@ from sys import stdout
 from PIL import Image
 from threading import Thread
 import argparse
+from colorama import Fore, Style
 
 DOT = (os.path.dirname(__file__)).replace('\\','/')
 
@@ -22,17 +23,29 @@ def print_separated(val_1, space_between:str, val_2):
 
     stdout.write(val_1_string + space_between[val_1_len : ] + val_2_string)
 
+def highlight(var:any, for_seconds:float= 10):
+    os.system('cls')
+    print()
+    print(var)
+    print()
+    wait_seconds(for_seconds)
 
 class CharacterMap:
-    def __init__(self, width:int, height:int, d_list:tuple=None, filler:str=' '): 
+    def __init__(self, width:int, height:int, d_list:tuple= None, filler:str= ' ', U1dtype:bool= True): 
         if d_list:
             self.width = len(d_list[0])
             self.height = len(d_list)
-            self.array = np.array(d_list, dtype='<U1')
+            if U1dtype:
+                self.array = np.array(d_list, dtype='<U1')
+            else:
+                self.array = np.array(d_list, dtype=np.object_)
         else:
             self.width = width
             self.height = height
-            self.array = np.full(((height, width)), filler, dtype='<U1')
+            if U1dtype:
+                self.array = np.full(((height, width)), filler, dtype='<U1')
+            else:
+                self.array = np.full(((height, width)), filler, dtype=np.object_)
 
         self.filler = filler
     
@@ -63,34 +76,48 @@ class CharacterMap:
 
         return self.array[first_rows:last_rows+1, first_columns:last_columns+1]
 
-    def add_map_array(self, row:int, col:int, added_array:np.array, exclude_chars:tuple):
+    def add_map_array(self, position:tuple= ('row','col'), added_array:np.array= (), exclude_chars:tuple= ()):
         height, width = self.array.shape
         added_height, added_width = added_array.shape
+        row, col = position
 
-        start_row = max(0, row); end_row = min(height, row + added_height); start_col = max(0, col); end_col = min(width, col + added_width)
-        local_start_row = max(0, -row); local_end_row = min(added_height, height - row); local_start_col = max(0, -col); local_end_col = min(added_width, width - col)
+        start_row, end_row = max(0, row), min(height, row + added_height)
+        start_col, end_col = max(0, col), min(width, col + added_width)
 
-        mask = ~np.isin(added_array[local_start_row:local_end_row, local_start_col:local_end_col], exclude_chars)
+        local_start_row, local_end_row = max(0, -row), min(added_height, height - row)
+        local_start_col, local_end_col = max(0, -col), min(added_width, width - col)
 
-        self.array[start_row:end_row, start_col:end_col][mask] = added_array[local_start_row:local_end_row, local_start_col:local_end_col][mask]
-        
+        target_region = self.array[start_row:end_row, start_col:end_col]
+        source_region = added_array[local_start_row:local_end_row, local_start_col:local_end_col]
+
+        if self.array.dtype != np.object_:
+            self.array = self.array.astype(np.object_)
+
+        if exclude_chars:
+            for i in range(target_region.shape[0]):
+                for j in range(target_region.shape[1]):
+                    if source_region[i, j] not in exclude_chars:
+                        target_region[i, j] = source_region[i, j]
+        else:
+            self.array[start_row:end_row, start_col:end_col] = source_region
+
         return self.array
     
-    def replace(self, replace_what=',', replace_with=' '):
+    def replace(self, replace_what:str= ',', replace_with:str= ' '):
         self.array[self.array == replace_what] = replace_with
         
         return self.array
 
     def render_char(self, char_width:int, char_height:int, char_col:int, char_row:int):
-        shown = (0-char_width <= char_col <= self.array.width) and (0-char_height <= char_row <= self.array.height)
+        shown = (0-char_width <= char_col <= self.width) and (0-char_height <= char_row <= self.height)
         if shown:
-            self.array.add_map_array(col=int(char_col), row=int(char_row), added_array=self.array, exclude_chars=(" "))
+            self.add_map_array((char_col, char_row), self.array, exclude_chars=(" "))
         
         return shown
 
 
 class TerminalDisplay:
-    def __init__(self, height:int=512):
+    def __init__(self, height:int= 512):
         self.height = height
         self.clear_height = height+2
         self.clear_height_str = str(height+2)
@@ -109,72 +136,128 @@ class TerminalDisplay:
         stdout.write(output)
         stdout.flush()
 
-    def update(self, display_map:CharacterMap, fps:float):
+    def update(self, display_map:CharacterMap, fps:float= 0):
 
         start_time = precise_time()
-        stay_seconds = int(10000/fps)/10000
+        if fps == 0:
+            self.write(display_map)
+        else:
+            stay_seconds = int(10000/fps)/10000
 
-        self.write(display_map)
-        #asyncio.sleep(int(10000/fps)/10000)
+            self.write(display_map)
 
-        while precise_time() - start_time < stay_seconds :
-            pass
+            while precise_time() - start_time < stay_seconds :
+                pass
 
 
 class CustomImage:
-    def __init__(self, image_array=np.array([]), character:str=None):
-        self.array = image_array
-        self.char = character
+    def __init__(self, image_array:np.array= ()):
+        self.array = np.array(image_array)
 
     def gray(self):
-        self.array = cv2.cvtColor(np.array(self.array), cv2.COLOR_RGB2GRAY)
-        return self
+        gray = cv2.cvtColor(self.array, cv2.COLOR_RGB2GRAY)
+        gamma = 1.5  # Adjust gamma for higher contrast
+        enhanced_gray = np.power(gray / 255.0, gamma) * 255.0
+        enhanced_gray = np.clip(enhanced_gray, 0, 255).astype(np.uint8)
+        """image = self.array
+        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        enhanced_gray = clahe.apply(gray)"""
+        self.array = enhanced_gray
+
+        #self.array = cv2.cvtColor(self.array, cv2.COLOR_RGB2GRAY)
+        return self.array
 
     def downscale(self, target_width:int, target_height:int):
-        if target_width == 1 and target_height == 1:
-            self.array = np.array(np.array(self.char))
-        else:
-            self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_AREA)
+        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_AREA)
         return self
 
     def be_screenshot(self):
         self.array = np.array(take_screenshot())
         return self
     
-    def save_as_img(self, name:str='image'):
+    def save_as_img(self, name:str= 'image'):
         image = Image.fromarray(self.array)
         return image.save(f'{name}.png')
     
-    def save_as_text(self, name:str='text'):
+    def save_as_text(self, name:str= 'text'):
         return np.savetxt(f'{name}.txt', self.array, fmt='%f', delimiter=' ')
     
-    def to_map(self, target_width=-1, target_height=-1, grayed=False, sized=False):
+    def to_map(self, target_width:int= -1, target_height:int= -1, grayed:bool= False, sized:bool= False):
         if not grayed: self.gray()
         if not sized: self.downscale(target_width, target_height)
 
         indices = np.digitize(self.array, THRESHOLDS)
-        img_map = CharacterMap(width=target_width, height=target_height)
+        img_map = CharacterMap(target_width, target_height)
         img_map.array[:] = np.array(OPAS)[indices]
         
         return img_map
+    
+    def to_colorized_map(self, target_width:int= -1, target_height:int= -1):
+        self.downscale(target_width, target_height)
 
+        colorized_map = CharacterMap(target_width, target_height, U1dtype=False)
 
-class Monitor:
-    def __init__(self):
-        pass
+        for y in range(target_height):
+            for x in range(target_width):
+                r, g, b = self.array[y, x].astype(np.int32)
 
-    def to_map(target_width:int, target_height:int):
-        img = CustomImage()
-        img.be_screenshot()
+                luminance = 0.299 * r + 0.587 * g + 0.114 * b  
 
-        img.gray()
-        img.downscale(target_width, target_height)
+                char_index = np.digitize(luminance, THRESHOLDS, right=True)
+                char_index = max(0, min(char_index, len(OPAS) - 1))
+                ascii_char = OPAS[char_index]
 
-        indices = np.digitize(img.array, THRESHOLDS)
-        monitor_display_map = CharacterMap(width=target_width, height=target_height)
-        monitor_display_map.array[:] = np.array(OPAS)[indices]
-        
-        return monitor_display_map
+                total = max(r + g + b, 1)
+                r_ratio, g_ratio, b_ratio = r / total, g / total, b / total  
+
+                if luminance > 200:
+                    color = Fore.WHITE
+                elif luminance > 150:
+                    if r_ratio > 0.5:
+                        color = Fore.LIGHTRED_EX
+                    elif g_ratio > 0.5:
+                        color = Fore.LIGHTGREEN_EX
+                    elif b_ratio > 0.5:
+                        color = Fore.LIGHTBLUE_EX
+                    else:
+                        color = Fore.LIGHTWHITE_EX
+                elif luminance > 100:
+                    if r_ratio > 0.5 and g_ratio > 0.4:
+                        color = Fore.LIGHTYELLOW_EX
+                    elif g_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.LIGHTCYAN_EX
+                    elif r_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.LIGHTMAGENTA_EX
+                    elif r_ratio > 0.5:
+                        color = Fore.RED
+                    elif g_ratio > 0.5:
+                        color = Fore.GREEN
+                    elif b_ratio > 0.5:
+                        color = Fore.BLUE
+                    else:
+                        color = Fore.LIGHTBLACK_EX
+                elif luminance > 50:
+                    if r_ratio > 0.5 and g_ratio > 0.4:
+                        color = Fore.YELLOW
+                    elif g_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.CYAN
+                    elif r_ratio > 0.5 and b_ratio > 0.4:
+                        color = Fore.MAGENTA
+                    elif r_ratio > 0.5:
+                        color = Fore.RED
+                    elif g_ratio > 0.5:
+                        color = Fore.GREEN
+                    elif b_ratio > 0.5:
+                        color = Fore.BLUE
+                    else:
+                        color = Fore.BLACK
+                else:
+                    color = Fore.BLACK
+
+                colorized_map.array[y, x] = color + ascii_char + Fore.WHITE
+
+        return colorized_map
 
 
 def get_terminal_display_size():
@@ -212,17 +295,19 @@ def get_parsed_inputs():
     return width, height
 
 
-def flashScreen(display_map:CharacterMap, terminal_display:TerminalDisplay, speed:float = 0.02):
+def flashScreen(display_map:CharacterMap, terminal_display:TerminalDisplay, fps:float= 20):
     global OPAS
+    o_len = len(OPAS)
+    frame_time = o_len/fps
     for char in OPAS:
         display_map.fill(char)
-        terminal_display.update(display_map, stay_seconds=speed)
+        terminal_display.update(display_map, fps=frame_time)
     for char in reversed(OPAS):
         display_map.fill(char)
-        terminal_display.update(display_map, stay_seconds=speed)
+        terminal_display.update(display_map, fps=frame_time)
 
 
-def write_text(text:str="", char_width:int=None, char_height:int=None, char_row:int=0, stay_seconds:float=0):
+def write_text(text:str= "", char_width:int= None, char_height:int= None, char_row:int= 0, fps:float= 0):
     if not char_height:  char_height = char_width//CHAR_WIDTH_PER_HEIGHT
     if not char_width:  char_width = char_height*CHAR_WIDTH_PER_HEIGHT
 
@@ -244,14 +329,14 @@ def write_text(text:str="", char_width:int=None, char_height:int=None, char_row:
 
         for char_index in range( render_char_start_index, render_char_end_index ):
             #try:
-            display_map.render_char(char_width, char_height, display_map.width - step_index + char_width*char_index, char_row, char_maps[char_index])
+            display_map.render_char(char_width, char_height, display_map.width - step_index + char_width*char_index, char_row)
             #except:
             #    display_map.fill("!")
         
-        terminal_display.update(display_map, stay_seconds=stay_seconds)
+        terminal_display.update(display_map, fps=fps)
         
 
-def write_szozat(char_width:int=None, char_height:int=None, char_row:int=0, stay_seconds:float=0):
+def write_szozat(char_width:int= None, char_height:int= None, char_row:int= 0, fps:float= 0):
     verses = [
         'Hazádnak rendületlenűl  Légy híve, oh magyar;  Bölcsőd az s majdan sírod is,  Mely ápol s eltakar.',
         'A nagy világon e kivűl  Nincsen számodra hely;  Áldjon vagy verjen sors keze;  Itt élned, halnod kell.',
@@ -268,8 +353,8 @@ def write_szozat(char_width:int=None, char_height:int=None, char_row:int=0, stay
         'Légy híve rendületlenűl  Hazádnak, oh magyar:  Ez éltetőd, s ha elbukál,  Hantjával ez takar.',
         'A nagy világon e kivűl  Nincsen számodra hely;  Áldjon vagy verjen sors keze:  Itt élned, halnod kell.',
     ]
-    #for verse in verses: write_text(verse, char_width, char_height, char_row, stay_seconds)
-    write_text("  /  ".join(verses), char_width, char_height, char_row, stay_seconds=stay_seconds)
+    #for verse in verses: write_text(verse, char_width, char_height, char_row, fps)
+    write_text("  /  ".join(verses), char_width, char_height, char_row, fps=fps)
 
 
 def get_screen_map():
@@ -277,14 +362,14 @@ def get_screen_map():
     terminal_display.update(display_map)
 
 
-def make_axis(mark_counts:tuple=(5,5), marking_spaces:tuple=(3,3)) -> CharacterMap:
+def make_axis(mark_counts:tuple= (5,5), marking_spaces:tuple= (3,3)) -> CharacterMap:
     mark_count = {'x':mark_counts[0], 'y':mark_counts[1]}
     marking_space = {'x':marking_spaces[0], 'y':marking_spaces[1]}
 
     width = (marking_space['x']+1)*(mark_count['x']-1) + 5
     height =  (marking_space['y']+1)*(mark_count['y']-1) + 5
 
-    axis_map = CharacterMap(width=width, height=height)
+    axis_map = CharacterMap(width, height)
     
     char = ''
 
@@ -311,7 +396,7 @@ def make_axis(mark_counts:tuple=(5,5), marking_spaces:tuple=(3,3)) -> CharacterM
     
     return axis_map
 
-def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_range:tuple=(0., 0.), marker:str="×") -> CharacterMap:
+def get_graph_marks(funct, width:int, height:int, x_range:tuple= (0., 0.), y_range:tuple= (0., 0.), marker:str= "×") -> CharacterMap:
     if x_range[0] == x_range[1]:
         x_range = (-5, 5)
     
@@ -344,7 +429,7 @@ def get_graph_marks(funct, width:int, height:int, x_range:tuple=(0., 0.), y_rang
     
     return marks_map
 
-def make_graph(funct, width:int, height:int, x_range:tuple=(0.,0.), y_range:tuple=(0.,0.), mark_counts:tuple=(0,0), marker:str="×") -> CharacterMap:
+def make_graph(funct, width:int, height:int, x_range:tuple= (0.,0.), y_range:tuple= (0.,0.), mark_counts:tuple= (0,0), marker:str="×") -> CharacterMap:
     if mark_counts == (0,0):
         mark_counts = (5, 5)
     
@@ -365,13 +450,13 @@ OPAS = tuple(" .`':,_-;^!<+>=/*?|vLclTxY()r1iz{}tnsJjfCuo7FI][e3aVX2yZShk4AUPw5b
 
 #THRESHOLDS = (19.91780620928458, 36.928531603967365, 39.752178825048425, 39.838979693644006, 42.89010505311343, 53.65790245906449, 54.39645812547686, 62.832230471271785, 69.5289923117554, 74.16610423146898, 105.2935691648571, 106.47436029109686, 108.3989450671988, 109.07501907388935, 111.0800443101121, 116.27313075884739, 117.72554874112332, 123.65719085627094, 125.4545674628793, 125.71048036856624, 128.67854627618993, 130.0280752978461, 131.8565056634779, 132.5045190445449, 135.4026204589471, 137.2422750748283, 137.49893626386523, 142.01220728916016, 142.55957655965727, 142.75450437232232, 143.70407594342396, 146.48619343858206, 146.7076853101708, 147.49076383590585, 148.18142936792066, 149.4321849873819, 149.47745613005455, 153.02357092552379, 153.3558087329069, 155.5007629555725, 156.51356446974586, 157.06991314044254, 157.39055255590122, 157.41898732319973, 157.53646780914377, 157.60007189389046, 157.8986369505253, 162.85788485239746, 163.27355625330128, 165.90601707846704, 166.07288426550852, 167.35282293561832, 167.52754709783437, 169.496280591584, 170.97638505780859, 172.67985210399672, 174.8539893773109, 181.89309085040205, 182.68664534303656, 185.2813178590293, 185.875828980574, 186.9806693467927, 188.07241475438698, 188.70695903515465, 194.10544926345443, 194.9416559070368, 195.05651740125595, 195.95969540465987, 196.1849286929984, 196.41091026468695, 196.81199014026643, 197.21456658254593, 197.26544985034334, 198.76987352544165, 200.7887420036387, 203.01114355302542, 204.88185192793006, 210.0105860085686, 212.57495304888786, 215.1105111802336, 218.9200217148894, 219.68925699865017, 221.3388476436411, 223.9589617935325, 232.33374904630554, 232.41418950642645, 232.8287384823053, 233.36675421092787, 240.17201713715596, 243.3391264158695, 255.0)
 THRESHOLDS = (19.92, 36.93, 39.75, 39.84, 42.89, 53.66, 54.4, 62.83, 69.53, 74.17, 105.29, 106.47, 108.4, 109.08, 111.08, 116.27, 117.73, 123.66, 125.45, 125.71, 128.68, 130.03, 131.86, 132.5, 135.4, 137.24, 137.5, 142.01, 142.56, 142.75, 143.7, 146.49, 146.71, 147.49, 148.18, 149.43, 149.48, 153.02, 153.36, 155.5, 156.51, 157.07, 157.39, 157.42, 157.54, 157.6, 157.9, 162.86, 163.27, 165.91, 166.07, 167.35, 167.53, 169.5, 170.98, 172.68, 174.85, 181.89, 182.69, 185.28, 185.88, 186.98, 188.07, 188.71, 194.11, 194.94, 195.06, 195.96, 196.18, 196.41, 196.81, 197.21, 197.27, 198.77, 200.79, 203.01, 204.88, 210.01, 212.57, 215.11, 218.92, 219.69, 221.34, 223.96, 232.33, 232.41, 232.83, 233.37, 240.17, 243.34, 255.0)
-
+THRESHOLDS = np.array(THRESHOLDS)
 
 CHAR_LIST = tuple("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?/ áéíóöőúüűÁÉÍÓÖŐÚÜŰ")
  
 CHAR_COUNT = len(CHAR_LIST)
 
-CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'{DOT}/Data/Characters/{i}.png')), CHAR_LIST[i] ) for i in range(CHAR_COUNT)}
+CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'{DOT}/Data/Characters/{i}.png')) ) for i in range(CHAR_COUNT)}
 
 
 CHAR_WIDTH_PER_HEIGHT = 78/155
@@ -424,16 +509,15 @@ if __name__ == "__main__":
 
     terminal_display = TerminalDisplay(height)
 
-    monitor = Monitor
-
 
 
     colorama.init() # Initialize terminal formatting
 
-    #write_text("A mexikóiak részt vettek a Bakel és tuba közt forgatásában", 20, None, 2, 0.005)
+    #write_text("A mexikóiak részt vettek a Bakel és tuba közt forgatásában", 20, None, 2, 5)
 
     while True:
-        display_map = monitor.to_map(width, height)
+        monitor_image = CustomImage().be_screenshot()
+        display_map = monitor_image.to_map(width, height)
         terminal_display.update(display_map, 60)
     terminal_display.clear()
         
