@@ -209,7 +209,7 @@ class CustomImage:
                 char_index = max(0, min(char_index, len(OPAS) - 1))
                 char = OPAS[char_index]
 
-                color_map.array[y, x] = f"\033[38;2;{r};{g};{b}m{char}{Fore.WHITE}"
+                color_map.array[y, x] = f"\033[38;2;{r};{g};{b}m{char}"
 
         return color_map
 
