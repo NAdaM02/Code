@@ -1,69 +1,82 @@
 from PIL import Image
 import numpy as np
 from PIL.ImageGrab import grab as take_screenshot
-from time import sleep as wait_seconds
+from time import sleep as wait
 import os
 import subprocess
 
-import numpy as np
-from PIL import Image
-import os
+def get_char_image(char, terminal_roi, background_color):
+    os.system('cls')
+    print(char)
+    wait(0.1)
+    try:
+        img = take_screenshot()
+        cropped_img = img.crop(terminal_roi)  # Crop to terminal ROI
+        cropped_img_np = np.array(cropped_img)
 
-def find_solid_color_rectangle(image: np.ndarray, color: np.ndarray, min_height=20, min_width=3, tolerance=20):
-    h_img, w_img, _ = image.shape
-    visited = np.zeros((h_img, w_img), dtype=bool)
+        # Find character (pixels NOT the background color)
+        char_mask = np.all(cropped_img_np != background_color, axis=2).astype(np.uint8) * 255
 
-    def color_within_tolerance(c1, c2, tolerance):
-        return np.all(np.abs(c1 - c2) <= tolerance)
+        # Find bounding box
+        rows = np.any(char_mask, axis=1)
+        cols = np.any(char_mask, axis=0)
+        if not np.any(rows) or not np.any(cols):
+            return Image.new('RGB', (10, 10), color='black')  # No character found
 
-    for y in range(h_img):
-        for x in range(w_img):
-            if visited[y, x] or not color_within_tolerance(image[y, x], color, tolerance):
-                continue
+        ymin, ymax = np.where(rows)[0][[0, -1]]
+        xmin, xmax = np.where(cols)[0][[0, -1]]
+        return cropped_img.crop((xmin, ymin, xmax + 1, ymax + 1))
 
-            y_end = y
-            while y_end < h_img and color_within_tolerance(image[y_end, x], color, tolerance):
-                y_end += 1
+    except Exception as e:
+        print(f"Error capturing/processing '{char}': {e}")
+        return Image.new('RGB', (10, 10), color='black')
 
-            x_end = x
-            while x_end < w_img and np.all([color_within_tolerance(image[y:y_end, x_end, c], color[c], tolerance) for c in range(3)]):
-                x_end += 1
+def get_terminal_roi(background_color):
+    os.system('cls')
+    print('█')  # Print a solid block
+    wait(0.5)
+    img = np.array(take_screenshot())
 
-            visited[y:y_end, x:x_end] = True
+    # Find the solid block (pixels that ARE the background color)
+    mask = np.all(img == background_color, axis=2).astype(np.uint8) * 255
 
-            if (y_end - y) >= min_height and (x_end - x) >= min_width:
-                return (x, y, x_end, y_end)
-
-    return None
+    rows = np.any(mask, axis=1)
+    cols = np.any(mask, axis=0)
+    if not np.any(rows) or not np.any(cols):
+        raise Exception("Could not find terminal ROI. Check background color.")
+    ymin, ymax = np.where(rows)[0][[0, -1]]
+    xmin, xmax = np.where(cols)[0][[0, -1]]
+    return xmin, ymin, xmax + 1, ymax + 1
 
 characters = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"
+background_color = np.array([220, 223, 228])
 
-os.system('cls')
-print('█')
-img = np.array(take_screenshot())
-section = find_solid_color_rectangle(img, (220, 223, 228), tolerance=20)  # Added tolerance parameter
-if section:
-    square = img[section[1]:section[3], section[0]:section[2]]
-    Image.fromarray(square).save('asd.png')
+# --- Get Terminal ROI ---
+try:
+    terminal_roi = get_terminal_roi(background_color)
+    print(f"Terminal ROI: {terminal_roi}")
+except Exception as e:
+    print(f"Error during initial setup: {e}")
+    exit()
 
-
-print(section)
-wait_seconds(100)
-
-
+# --- Capture and Process Characters ---
 imgs = []
-for i in range(len(characters)):
-    img = take_screenshot()
-    imgs.append(img)
+for char in characters:
+    imgs.append(get_char_image(char, terminal_roi, background_color))
 
+# --- Save Images ---
 save_dir = "PICS"
-d = subprocess.check_output("dir", shell=True, text=True)
-if save_dir in d:
+if os.path.exists(save_dir):
     i = 1
-    while f'{save_dir}{i}' in d:
+    while os.path.exists(f'{save_dir}{i}'):
         i += 1
     save_dir += str(i)
-os.system(f'mkdir {save_dir}')
-    
-for i in range(len(characters)):
-    imgs[i].save(f'./{save_dir}/{i}.png')
+os.makedirs(save_dir)
+
+for i, img in enumerate(imgs):
+    try:
+        img.save(f'./{save_dir}/{i}.png')
+    except Exception as e:
+        print(f"Error saving image {i}: {e}")
+
+print(f"Images saved to: {save_dir}")

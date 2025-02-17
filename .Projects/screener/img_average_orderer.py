@@ -48,4 +48,4 @@ for i in range(len(sorting_key)):
 
 print()
 print("".join(sorted_characters))
-print(", ".join(map(str, normalized_sorted_vals)))
+print(", ".join(map(lambda x: str(round(x,2)), normalized_sorted_vals)))
