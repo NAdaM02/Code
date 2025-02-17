@@ -285,7 +285,7 @@ class CustomImage:
         chars = np.array(OPAS)[indices_map]
 
         color_strings = np.array([f"\033[38;2;{r};{g};{b}m" for r, g, b in color_map.reshape(-1, 3)])
-        color_shape_map.array = (color_strings.reshape(target_height, target_width) + chars + Fore.WHITE)
+        color_shape_map.array = (color_strings.reshape(target_height, target_width) + chars)
 
         return color_shape_map
         
