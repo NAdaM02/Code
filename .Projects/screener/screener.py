@@ -31,6 +31,21 @@ def highlight(var:any, for_seconds:float= 10):
     print()
     wait_seconds(for_seconds)
 
+def srgb_to_linear(c):
+    c = c / 255.0
+    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
+
+def linear_to_srgb(c):
+    c = np.clip(c, 0, 1)
+    return np.where(c <= 0.0031308, c * 12.92, 1.055 * (c ** (1/2.4)) - 0.055) * 255
+
+def brighten_rgb(rgb, factor=2):
+    linear_rgb = srgb_to_linear(np.array(rgb, dtype=np.float32))
+    
+    brightened_srgb = linear_to_srgb(linear_rgb*factor)
+    
+    return np.round(brightened_srgb).astype(int)
+
 class CharacterMap:
     def __init__(self, width:int, height:int, d_list:tuple= None, filler:str= ' ', U1dtype:bool= True): 
         if d_list:
@@ -283,8 +298,7 @@ class CustomImage:
         color_map = grid_colors[row_indices[:, None], col_indices]
 
         chars = np.array(OPAS)[indices_map]
-
-        color_strings = np.array([f"\033[38;2;{r};{g};{b}m" for r, g, b in color_map.reshape(-1, 3)])
+        color_strings = np.array([f"\033[38;2;{r};{g};{b}m" for r, g, b in brighten_rgb(color_map.reshape(-1, 3), factor=2)])
         color_shape_map.array = (color_strings.reshape(target_height, target_width) + chars)
 
         return color_shape_map
