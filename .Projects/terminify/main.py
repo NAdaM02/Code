@@ -898,7 +898,7 @@ def update_album_cover():
         """img = download_image('https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0')
         album_cover = img.to_color_map(60,30)"""
         album_cover_url = get_album_cover_url()
-        album_cover = download_image(album_cover_url).to_color_map(60,30)        
+        album_cover = download_image(album_cover_url).to_color_shape_map(60,30)        
 
         display_map.add_map_array(ART_PLACES['cover_art'], album_cover.array)
 
@@ -1066,7 +1066,7 @@ if __name__ == "__main__":
     """album_cover_url = 'https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0'
 
     img = download_image(album_cover_url)
-    album_cover = img.to_color_map(60,30)
+    album_cover = img.to_color_shape_map(60,30)
     display_map.add_map_array(ART_PLACES['cover_art'], album_cover.array)
 
     terminal_display.update(display_map)"""
