@@ -1,6 +1,6 @@
-from time import time as now_in_seconds
+from time import time as time_in_seconds
 from time import perf_counter as precise_time
-from time import sleep as wait_seconds
+from time import sleep as wait
 import colorama
 import os
 import numpy as np
@@ -8,7 +8,7 @@ import cv2
 from PIL.ImageGrab import grab as take_screenshot
 from sys import stdout
 from PIL import Image
-from threading import Thread
+import threading
 import argparse
 from colorama import Fore, Style
 from scipy.spatial.distance import cdist
@@ -29,7 +29,7 @@ def highlight(var:any, for_seconds:float= 10):
     print()
     print(var)
     print()
-    wait_seconds(for_seconds)
+    wait(for_seconds)
 
 def srgb_to_linear(c):
     c = c / 255.0
@@ -45,6 +45,7 @@ def brighten_rgb(rgb, factor=2):
     brightened_srgb = linear_to_srgb(linear_rgb*factor)
     
     return np.round(brightened_srgb).astype(int)
+
 
 class CharacterMap:
     def __init__(self, width:int, height:int, d_list:tuple= None, filler:str= ' ', U1dtype:bool= True): 
@@ -153,8 +154,8 @@ class TerminalDisplay:
         stdout.flush()
 
     def update(self, display_map:CharacterMap, fps:float= 0):
-
-        start_time = precise_time()
+        global GLOBAL_last_frame_time
+        
         if fps == 0:
             self.write(display_map)
         else:
@@ -162,8 +163,10 @@ class TerminalDisplay:
 
             self.write(display_map)
 
-            while precise_time() - start_time < stay_seconds :
+            while (precise_time() - GLOBAL_last_frame_time)< stay_seconds :
                 pass
+
+            GLOBAL_last_frame_time = precise_time()
 
 
 class CustomImage:
@@ -171,21 +174,14 @@ class CustomImage:
         self.array = np.array(image_array)
 
     def gray(self):
-        gray = cv2.cvtColor(self.array, cv2.COLOR_RGB2GRAY)
-        gamma = 1.5  # Adjust gamma for higher contrast
-        enhanced_gray = np.power(gray / 255.0, gamma) * 255.0
-        enhanced_gray = np.clip(enhanced_gray, 0, 255).astype(np.uint8)
-        """image = self.array
-        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        enhanced_gray = clahe.apply(gray)"""
-        self.array = enhanced_gray
+        lookup_table = np.array([(i / 255.0) ** 1.5 * 255 for i in range(256)], dtype=np.uint8)
+        self.array = cv2.LUT(cv2.cvtColor(self.array, cv2.COLOR_RGB2GRAY), lookup_table)
 
-        #self.array = cv2.cvtColor(self.array, cv2.COLOR_RGB2GRAY)
         return self.array
 
     def downscale(self, target_width:int, target_height:int):
-        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_AREA)
+        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_LINEAR_EXACT)
+
         return self
 
     def be_screenshot(self):
@@ -236,33 +232,27 @@ class CustomImage:
         height, width = self.array.shape
         grid_rows = height // 3
         grid_cols = width // 3
-
         
-        output_indices = np.zeros((grid_rows, grid_cols), dtype=int)
-
         reshaped_shapes = np.array(CHARACTER_SHAPES).reshape(len(CHARACTER_SHAPES), -1)
-
-        for i in range(grid_rows):
-            for j in range(grid_cols):
-                grid = self.array[i * 3:(i + 1) * 3, j * 3:(j + 1) * 3]
-
-                flattened_grid = grid.reshape(-1)
-
-                distances = cdist(flattened_grid[np.newaxis, :], reshaped_shapes, metric='euclidean')
-
-                closest_index = np.argmin(distances)
-                output_indices[i, j] = closest_index
-
+        
+        grids = np.lib.stride_tricks.as_strided(
+            self.array,
+            shape=(grid_rows, grid_cols, 3, 3),
+            strides=(self.array.strides[0] * 3, self.array.strides[1] * 3, *self.array.strides)
+        )
+        
+        flattened_grids = grids.reshape(grid_rows * grid_cols, -1)
+        distances = cdist(flattened_grids, reshaped_shapes, metric='euclidean')
+        output_indices = np.argmin(distances, axis=1).reshape(grid_rows, grid_cols)
+        
         img_map = CharacterMap(width=target_width, height=target_height)
-
-        row_scale = grid_rows / target_height
-        col_scale = grid_cols / target_width
-
-        for i in range(target_height):
-            for j in range(target_width):
-                source_row = int(i * row_scale)
-                source_col = int(j * col_scale)
-                img_map.array[i, j] = OPAS[output_indices[source_row, source_col]]
+        
+        row_indices = (np.arange(target_height) * (grid_rows / target_height)).astype(int)
+        col_indices = (np.arange(target_width) * (grid_cols / target_width)).astype(int)
+        
+        indices_map = output_indices[row_indices[:, None], col_indices]
+        img_map.array = np.array(OPAS)[indices_map]
+        
         return img_map
 
     def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, grayed:bool= False):
@@ -298,7 +288,7 @@ class CustomImage:
         color_map = grid_colors[row_indices[:, None], col_indices]
 
         chars = np.array(OPAS)[indices_map]
-        color_strings = np.array([f"\033[38;2;{r};{g};{b}m" for r, g, b in brighten_rgb(color_map.reshape(-1, 3), factor=2)])
+        color_strings = np.array([f"\033[38;2;{r};{g};{b}m" for r, g, b in color_map.reshape(-1, 3) ])
         color_shape_map.array = (color_strings.reshape(target_height, target_width) + chars)
 
         return color_shape_map
@@ -636,7 +626,11 @@ CHARACTER_SHAPES = (
 
     print(colorama.Style.RESET_ALL)  # Reset terminal formatting"""
 
+
 if __name__ == "__main__":
+    global GLOBAL_last_frame_time, bottom_text
+    bottom_text = ""
+    GLOBAL_last_frame_time = 0
 
     os.system('cls')
 
@@ -650,13 +644,13 @@ if __name__ == "__main__":
 
     colorama.init() # Initialize terminal formatting
 
-    #write_text("A mexikóiak részt vettek a Bakel és tuba közt forgatásában", 20, None, 2, 5)
 
     while True:
         monitor_image = CustomImage().be_screenshot()
         display_map = monitor_image.to_color_shape_map(width, height)
-        terminal_display.update(display_map, 60)
+        terminal_display.update(display_map, fps=7)
+        #if bottom_text != "": print(f"\n{Fore.WHITE}{bottom_text}")
+    
     terminal_display.clear()
-        
-
+    
     print(colorama.Style.RESET_ALL)  # Reset terminal formatting

@@ -1049,6 +1049,9 @@ def song_view():
 
 
 if __name__ == "__main__":
+    global GLOBAL_last_frame_time, bottom_text
+    bottom_text = ""
+    GLOBAL_last_frame_time = 0
 
     colorama.init(autoreset=True) # Initialize terminal formatting
 
