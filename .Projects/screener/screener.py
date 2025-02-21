@@ -431,7 +431,9 @@ def make_axis(mark_counts:tuple= (5,5), marking_spaces:tuple= (3,3)) -> Characte
     
     return axis_map
 
-def get_graph_marks(funct, width:int, height:int, x_range:tuple= (0., 0.), y_range:tuple= (0., 0.), marker:str= "×") -> CharacterMap:
+def get_graph_marks(funct, size:tuple= ("width", "height"), x_range:tuple= (0., 0.), y_range:tuple= (0., 0.), marker:str= "×") -> CharacterMap:
+    width, height = size
+    
     if x_range[0] == x_range[1]:
         x_range = (-5, 5)
     
@@ -459,12 +461,14 @@ def get_graph_marks(funct, width:int, height:int, x_range:tuple= (0., 0.), y_ran
             if 0 <= graph_y < height:
                 marks_map.array[graph_y][col] = marker
         
-        except Exception:
+        except:
             pass
     
     return marks_map
 
-def make_graph(funct, width:int, height:int, x_range:tuple= (0.,0.), y_range:tuple= (0.,0.), mark_counts:tuple= (0,0), marker:str="×") -> CharacterMap:
+def make_graph(funct, size:tuple= ("width", "height"), x_range:tuple= (0.,0.), y_range:tuple= (0.,0.), mark_counts:tuple= (0,0), marker:str="×") -> CharacterMap:
+    width, height = size
+    
     if mark_counts == (0,0):
         mark_counts = (5, 5)
     
@@ -472,10 +476,12 @@ def make_graph(funct, width:int, height:int, x_range:tuple= (0.,0.), y_range:tup
     
     axis_map = make_axis(mark_counts, marking_spaces)
     
-    marks_map = get_graph_marks(funct, axis_map.width-4, axis_map.height-4, x_range, y_range, marker)
+    marks_map = get_graph_marks(funct, (axis_map.width-4, axis_map.height-4), x_range, y_range, marker)
+    
+    #highlight("\n".join(" ".join(row) for row in marks_map.array))
     
     graph_map = axis_map
-    graph_map.add_map_array(2, 2, marks_map.array, (' '))
+    graph_map.add_map_array((2, 2), marks_map.array, exclude_chars=(' '))
     
     return graph_map
 
@@ -610,22 +616,22 @@ CHARACTER_SHAPES = (
     #write_szozat(char_width, char_height, char_row, 0.001)
 
     
-    #graph_map = make_graph(lambda x: np.sin(x), width=121, height=30, x_range=(-10, 10), y_range=(-1, 1), mark_counts=(11, 3), marker="×")
+    #graph_map = make_graph(lambda x: np.sin(x), (121, 30), x_range=(-10, 10), y_range=(-1, 1), mark_counts=(11, 3), marker="×")
 
-    #graph_map = make_graph(lambda x: x**2, width=80, height=40, x_range=(-5, 5), y_range=(0, 25))
+    #graph_map = make_graph(lambda x: x**2, (80, 40), x_range=(-5, 5), y_range=(0, 25))
 
-    #graph_map = make_graph(lambda x: x**2, 100, 100)
+    #graph_map = make_graph(lambda x: x**2, (100, 100))
 
 
-    graph_map = make_graph(lambda x: -7/4*x+5/4, 120, 120)
+    graph_map = make_graph(lambda x: -1**(x) + 2**(-(x)), (120, 120))
 
     terminal_display = TerminalDisplay(graph_map.height)
 
     terminal_display.update(graph_map)
 
 
-    print(colorama.Style.RESET_ALL)  # Reset terminal formatting"""
-
+    print(colorama.Style.RESET_ALL)  # Reset terminal formatting
+"""
 
 if __name__ == "__main__":
     global GLOBAL_last_frame_time, bottom_text
