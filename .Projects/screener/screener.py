@@ -312,7 +312,7 @@ def get_terminal_display_size():
 def get_parsed_inputs():
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('size', type=str, nargs='?', default='20', help='Size coherent [11,14,19,28,56] or [16x9]')
+    parser.add_argument('size', type=str, nargs='?', default='13', help='Size coherent [11,14,19,28,56] or [16x9]')
     
     args = parser.parse_args()
 
