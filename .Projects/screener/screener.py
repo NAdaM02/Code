@@ -12,6 +12,7 @@ import threading
 import argparse
 from colorama import Fore, Style
 from scipy.spatial.distance import cdist
+import sys
 
 DOT = (os.path.dirname(__file__)).replace('\\','/')
 
@@ -148,7 +149,7 @@ class TerminalDisplay:
         os.system('cls')
     
     def write(self, display_map:CharacterMap):
-        output = "\n" + "\n".join((" ".join(row) for row in display_map.array))
+        output = "\n" + "\n".join((" ".join(row) for row in display_map.array)) + Fore.WHITE
         self.to_beginning()
         stdout.write(output)
         stdout.flush()
@@ -179,8 +180,8 @@ class CustomImage:
 
         return self.array
 
-    def downscale(self, target_width:int, target_height:int):
-        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_LINEAR_EXACT)
+    def downscale(self, target_width:int, target_height:int, method=cv2.INTER_LINEAR_EXACT):
+        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=method)
 
         return self
 
@@ -255,9 +256,9 @@ class CustomImage:
         
         return img_map
 
-    def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, grayed:bool= False):
+    def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, downscale_method:int= cv2.INTER_LINEAR_EXACT):
 
-        self.downscale(target_width * 3, target_height * 3)
+        self.downscale(target_width * 3, target_height * 3, downscale_method)
 
         height, width, _ = self.array.shape
         grid_rows = height // 3
@@ -292,7 +293,6 @@ class CustomImage:
         color_shape_map.array = (color_strings.reshape(target_height, target_width) + chars)
 
         return color_shape_map
-        
 
 
 def get_terminal_display_size():
@@ -312,22 +312,41 @@ def get_terminal_display_size():
 def get_parsed_inputs():
     parser = argparse.ArgumentParser()
     
-    parser.add_argument('size', type=str, nargs='?', default='13', help='Size coherent [11,14,19,28,56] or [16x9]')
+    for i in range(1,3+1): parser.add_argument(f'p{i}', type=str, nargs='?', default='')
     
     args = parser.parse_args()
 
-    inp = args.size
+    p1, p2, p3 = args.p1, args.p2, args.p3
 
-    if inp == '':
-        width, height = 300, 40
-    elif ('x' not in inp) and ('*' not in inp):
-        x = int(inp)
-        width, height = x*16, x*9
+    convert_method = cv2.INTER_LINEAR_EXACT
+    width, height = 13*16, 13*9
+
+    if p1 == '':
+        pass
+
+    elif '.png' or '.jpg' in p1:
+        if 'x' in p2:
+            width, height = map(int, p2.split('x'))
+        elif p3 == "":
+            width, height = "IMG_SIZE", "IMG_SIZE"
+            convert_method = int(p2)
+        else:
+            convert_method = int(p3)
+        write_image(image_path=p1, size=(width, height), convert_method=convert_method)
+        sys.exit(0)
+
     else:
-        width, height = inp.split('x')
-        width=int(width); height=int(height)
-    
-    return width, height
+        if 'x' in p1:
+            width, height = map(int, p1.split('x'))
+        else:
+            a = int(p1)
+            width, height = a*16, a*9
+
+        if p2 != "":
+            convert_method = int(p2)
+        
+
+    return width, height, convert_method
 
 
 def flashScreen(display_map:CharacterMap, terminal_display:TerminalDisplay, fps:float= 20):
@@ -390,6 +409,18 @@ def write_szozat(char_width:int= None, char_height:int= None, char_row:int= 0, f
     ]
     #for verse in verses: write_text(verse, char_width, char_height, char_row, fps)
     write_text("  /  ".join(verses), char_width, char_height, char_row, fps=fps)
+
+
+def write_image(image_path:str, size:tuple= ("width", "height"), convert_method=cv2.INTER_LINEAR_EXACT):
+    c_img = CustomImage(Image.open(image_path))
+    width, height = size[0], size[1]
+    if size[0] == "IMG_SIZE":
+        width = c_img.array.shape[1]
+    if size[1] == "IMG_SIZE":
+        height = c_img.array.shape[0]
+    img_map = c_img.to_color_shape_map(width, height, convert_method)
+    terminal_display = TerminalDisplay(height)
+    terminal_display.update(img_map)
 
 
 def get_screen_map():
@@ -484,7 +515,6 @@ def make_graph(funct, size:tuple= ("width", "height"), x_range:tuple= (0.,0.), y
     graph_map.add_map_array((2, 2), marks_map.array, exclude_chars=(' '))
     
     return graph_map
-
 
 
 OPAS = tuple(" .`':,_-;^!<+>=/*?|vLclTxY()r1iz{}tnsJjfCuo7FI][e3aVX2yZShk4AUPw5bqK96dEmpHG%O#D80R&gN$BMQW@")
@@ -640,7 +670,7 @@ if __name__ == "__main__":
 
     os.system('cls')
 
-    width, height = get_parsed_inputs()
+    width, height, convert_method = get_parsed_inputs()
 
     display_map = CharacterMap(width, height)
 
@@ -653,7 +683,7 @@ if __name__ == "__main__":
 
     while True:
         monitor_image = CustomImage().be_screenshot()
-        display_map = monitor_image.to_color_shape_map(width, height)
+        display_map = monitor_image.to_color_shape_map(width, height, convert_method)
         terminal_display.update(display_map, fps=7)
         #if bottom_text != "": print(f"\n{Fore.WHITE}{bottom_text}")
     

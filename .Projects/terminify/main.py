@@ -233,7 +233,6 @@ class CharacterMap:
         target_region = self.array[start_row:end_row, start_col:end_col]
         source_region = added_array[local_start_row:local_end_row, local_start_col:local_end_col]
 
-        # Ensure dtype is object to preserve ANSI escape codes
         if self.array.dtype != np.object_:
             self.array = self.array.astype(np.object_)
 
@@ -253,15 +252,15 @@ class CharacterMap:
         return self.array
 
     def render_char(self, char_width:int, char_height:int, char_col:int, char_row:int):
-        shown = (0-char_width <= char_col <= self.array.width) and (0-char_height <= char_row <= self.array.height)
+        shown = (0-char_width <= char_col <= self.width) and (0-char_height <= char_row <= self.height)
         if shown:
-            self.array.add_map_array((int(char_col), int(char_row)), self.array, exclude_chars=(" "))
+            self.add_map_array((char_col, char_row), self.array, exclude_chars=(" "))
         
         return shown
 
 
 class TerminalDisplay:
-    def __init__(self, height:int=512):
+    def __init__(self, height:int= 512):
         self.height = height
         self.clear_height = height+2
         self.clear_height_str = str(height+2)
@@ -275,14 +274,14 @@ class TerminalDisplay:
         os.system('cls')
     
     def write(self, display_map:CharacterMap):
-        output = "\n" + "\n".join(("".join(row) for row in display_map.array))
+        output = "\n" + "\n".join((" ".join(row) for row in display_map.array)) + Fore.WHITE
         self.to_beginning()
         stdout.write(output)
         stdout.flush()
 
     def update(self, display_map:CharacterMap, fps:float= 0):
-
-        start_time = precise_time()
+        global GLOBAL_last_frame_time
+        
         if fps == 0:
             self.write(display_map)
         else:
@@ -290,8 +289,10 @@ class TerminalDisplay:
 
             self.write(display_map)
 
-            while precise_time() - start_time < stay_seconds :
+            while (precise_time() - GLOBAL_last_frame_time)< stay_seconds :
                 pass
+
+            GLOBAL_last_frame_time = precise_time()
 
 
 class CustomImage:
@@ -299,21 +300,14 @@ class CustomImage:
         self.array = np.array(image_array)
 
     def gray(self):
-        gray = cv2.cvtColor(self.array, cv2.COLOR_RGB2GRAY)
-        gamma = 1.5  # Adjust gamma for higher contrast
-        enhanced_gray = np.power(gray / 255.0, gamma) * 255.0
-        enhanced_gray = np.clip(enhanced_gray, 0, 255).astype(np.uint8)
-        """image = self.array
-        gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        enhanced_gray = clahe.apply(gray)"""
-        self.array = enhanced_gray
+        lookup_table = np.array([(i / 255.0) ** 1.5 * 255 for i in range(256)], dtype=np.uint8)
+        self.array = cv2.LUT(cv2.cvtColor(self.array, cv2.COLOR_RGB2GRAY), lookup_table)
 
-        #self.array = cv2.cvtColor(self.array, cv2.COLOR_RGB2GRAY)
         return self.array
 
-    def downscale(self, target_width:int, target_height:int):
-        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_LINEAR_EXACT)
+    def downscale(self, target_width:int, target_height:int, method=cv2.INTER_LINEAR_EXACT):
+        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=method)
+
         return self
 
     def be_screenshot(self):
@@ -332,7 +326,7 @@ class CustomImage:
         if not sized: self.downscale(target_width, target_height)
 
         indices = np.digitize(self.array, THRESHOLDS)
-        img_map = CharacterMap(width=target_width, height=target_height)
+        img_map = CharacterMap(target_width, target_height)
         img_map.array[:] = np.array(OPAS)[indices]
         
         return img_map
@@ -340,7 +334,7 @@ class CustomImage:
     def to_color_map(self, target_width:int= -1, target_height:int= -1):
         self.downscale(target_width, target_height)
 
-        color_map = CharacterMap(width=target_width, height=target_height, U1dtype=False)
+        color_map = CharacterMap(target_width, target_height, U1dtype=False)
 
         for y in range(target_height):
             for x in range(target_width):
@@ -350,59 +344,12 @@ class CustomImage:
 
                 char_index = np.digitize(luminance, THRESHOLDS, right=True)
                 char_index = max(0, min(char_index, len(OPAS) - 1))
-                ascii_char = OPAS[char_index]
+                char = OPAS[char_index]
 
-                total = max(r + g + b, 1)
-                r_ratio, g_ratio, b_ratio = r / total, g / total, b / total  
-
-                if luminance > 200:
-                    color = Fore.WHITE
-                elif luminance > 150:
-                    if r_ratio > 0.5:
-                        color = Fore.LIGHTRED_EX
-                    elif g_ratio > 0.5:
-                        color = Fore.LIGHTGREEN_EX
-                    elif b_ratio > 0.5:
-                        color = Fore.LIGHTBLUE_EX
-                    else:
-                        color = Fore.LIGHTWHITE_EX
-                elif luminance > 100:
-                    if r_ratio > 0.5 and g_ratio > 0.4:
-                        color = Fore.LIGHTYELLOW_EX
-                    elif g_ratio > 0.5 and b_ratio > 0.4:
-                        color = Fore.LIGHTCYAN_EX
-                    elif r_ratio > 0.5 and b_ratio > 0.4:
-                        color = Fore.LIGHTMAGENTA_EX
-                    elif r_ratio > 0.5:
-                        color = Fore.RED
-                    elif g_ratio > 0.5:
-                        color = Fore.GREEN
-                    elif b_ratio > 0.5:
-                        color = Fore.BLUE
-                    else:
-                        color = Fore.LIGHTBLACK_EX
-                elif luminance > 50:
-                    if r_ratio > 0.5 and g_ratio > 0.4:
-                        color = Fore.YELLOW
-                    elif g_ratio > 0.5 and b_ratio > 0.4:
-                        color = Fore.CYAN
-                    elif r_ratio > 0.5 and b_ratio > 0.4:
-                        color = Fore.MAGENTA
-                    elif r_ratio > 0.5:
-                        color = Fore.RED
-                    elif g_ratio > 0.5:
-                        color = Fore.GREEN
-                    elif b_ratio > 0.5:
-                        color = Fore.BLUE
-                    else:
-                        color = Fore.BLACK
-                else:
-                    color = Fore.BLACK
-
-                color_map.array[y, x] = color + ascii_char + Fore.WHITE
+                color_map.array[y, x] = f"\033[38;2;{r};{g};{b}m{char}"
 
         return color_map
-    
+
     def to_shape_map(self, target_width:int= -1, target_height:int= -1, grayed:bool= False):
         if not grayed: self.gray()
         
@@ -411,38 +358,32 @@ class CustomImage:
         height, width = self.array.shape
         grid_rows = height // 3
         grid_cols = width // 3
-
         
-        output_indices = np.zeros((grid_rows, grid_cols), dtype=int)
-
         reshaped_shapes = np.array(CHARACTER_SHAPES).reshape(len(CHARACTER_SHAPES), -1)
-
-        for i in range(grid_rows):
-            for j in range(grid_cols):
-                grid = self.array[i * 3:(i + 1) * 3, j * 3:(j + 1) * 3]
-
-                flattened_grid = grid.reshape(-1)
-
-                distances = cdist(flattened_grid[np.newaxis, :], reshaped_shapes, metric='euclidean')
-
-                closest_index = np.argmin(distances)
-                output_indices[i, j] = closest_index
-
+        
+        grids = np.lib.stride_tricks.as_strided(
+            self.array,
+            shape=(grid_rows, grid_cols, 3, 3),
+            strides=(self.array.strides[0] * 3, self.array.strides[1] * 3, *self.array.strides)
+        )
+        
+        flattened_grids = grids.reshape(grid_rows * grid_cols, -1)
+        distances = cdist(flattened_grids, reshaped_shapes, metric='euclidean')
+        output_indices = np.argmin(distances, axis=1).reshape(grid_rows, grid_cols)
+        
         img_map = CharacterMap(width=target_width, height=target_height)
-
-        row_scale = grid_rows / target_height
-        col_scale = grid_cols / target_width
-
-        for i in range(target_height):
-            for j in range(target_width):
-                source_row = int(i * row_scale)
-                source_col = int(j * col_scale)
-                img_map.array[i, j] = OPAS[output_indices[source_row, source_col]]
+        
+        row_indices = (np.arange(target_height) * (grid_rows / target_height)).astype(int)
+        col_indices = (np.arange(target_width) * (grid_cols / target_width)).astype(int)
+        
+        indices_map = output_indices[row_indices[:, None], col_indices]
+        img_map.array = np.array(OPAS)[indices_map]
+        
         return img_map
 
-    def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, grayed:bool= False):
+    def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, downscale_method:int= cv2.INTER_LINEAR_EXACT):
 
-        self.downscale(target_width * 3, target_height * 3)
+        self.downscale(target_width * 3, target_height * 3, downscale_method)
 
         height, width, _ = self.array.shape
         grid_rows = height // 3
@@ -473,11 +414,11 @@ class CustomImage:
         color_map = grid_colors[row_indices[:, None], col_indices]
 
         chars = np.array(OPAS)[indices_map]
-
-        color_strings = np.array([f"\033[38;2;{r};{g};{b}m" for r, g, b in color_map.reshape(-1, 3)])
-        color_shape_map.array = (color_strings.reshape(target_height, target_width) + chars + Fore.WHITE)
+        color_strings = np.array([f"\033[38;2;{r};{g};{b}m" for r, g, b in color_map.reshape(-1, 3) ])
+        color_shape_map.array = (color_strings.reshape(target_height, target_width) + chars)
 
         return color_shape_map
+
 
 
 
@@ -511,7 +452,7 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
     '0-3x3' : (".o.", "| |", "'0'"),
     '1-3x3' : (".~1", "  |", "  |"),
     '2-3x3' : ("˛=,", " ,I", "2__"),
-    '3-3x3' : ("˙´\\", " *3", ".˛/"),
+    '3-3x3' : ("˙`\\", " *3", ".˛/"),
     '4-3x3' : ("/  ", "4+*", " | "),
     '5-3x3' : ("_~~", "5o.", "--/"),
     '6-3x3' : ("˛o.", "6*.", "˙o˙"),
@@ -531,10 +472,10 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
     #'9-5x4' :  (" /¯\\ ", "|   |", " \\__|", "  ¯/ "),  #["╭──╮", "│ /│", "│  │", "│/ │", "╰──╯"],
 
     '0-5x4' :  
-    (",---,",
-     "|   |",
-     "|   |",
-     "'___'"),
+    (",:-:,",
+     ";   ;",
+     ";   ;",
+     "':_:'"),
 
     '1-5x4' :  
     ("  ,1 ", 
@@ -890,20 +831,21 @@ def download_image(url):
         response.raise_for_status()
         
         image = Image.open(BytesIO(response.content))
-        custom_image = CustomImage(np.array(image))
-        return custom_image
+        return CustomImage(np.array(image))
     except:
         return CustomImage(ART_ARRAYS['cover_art'])
 
 def update_album_cover():
     if current:
-        """img = download_image('https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0')
-        album_cover = img.to_color_map(60,30)"""
-        album_cover_url = get_album_cover_url()
-        album_cover = download_image(album_cover_url).to_color_shape_map(60,30)        
+        album_cover_url = get_album_cover_url() # 'https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0' # 
+        downloaded_image = download_image(album_cover_url)
+
+        for tw, th in ((30,30),(90,90)): Image.fromarray(downloaded_image.downscale(tw,th).array).save(f"album_cover-{tw}x{th}.png")
+
+        album_cover = downloaded_image.to_color_shape_map(60,30)
 
         display_map.add_map_array(ART_PLACES['cover_art'], album_cover.array)
-
+        
 
 def get_current_playlist_name():
     if current and current['context']:
