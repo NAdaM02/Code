@@ -15,9 +15,11 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import requests
 from io import BytesIO
-from colorama import Fore, Style
+from colorama import Fore
 from spotipy.exceptions import SpotifyException
 from scipy.spatial.distance import cdist
+
+import sys
 
 import logging
 logging.getLogger().setLevel(logging.ERROR)
@@ -311,7 +313,7 @@ class CustomImage:
         return self.array
 
     def downscale(self, target_width:int, target_height:int):
-        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_AREA)
+        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=cv2.INTER_LINEAR_EXACT)
         return self
 
     def be_screenshot(self):
@@ -535,15 +537,15 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
      "'___'"),
 
     '1-5x4' :  
-    ("  /| ", 
+    ("  ,1 ", 
      " / | ", 
      "   | ", 
      "   | "),
 
     '2-5x4' :  
     (" .-~,", 
-     "   / ", 
-     "  /  ", 
+     "    '", 
+     "  ,˝ ", 
      " /___"),
 
     '3-5x4' :  
@@ -559,7 +561,7 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
      "   | "),
 
     '5-5x4' :  
-    (" ,--*", 
+    (" ,---", 
      " \\__ ", 
      "    \\", 
      " \\__/"),
@@ -571,7 +573,7 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
      "'__/ "),
 
     '7-5x4' :  
-    (" ---7", 
+    (" --~;", 
      "   / ", 
      "  /  ", 
      " /   "),
@@ -584,7 +586,7 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
 
     '9-5x4' :  
     (" ,--,", 
-     " |  |", 
+     " {  |", 
      "  '*}", 
      " ._/ "),
 
@@ -991,7 +993,7 @@ def song_view():
 
 
 
-    buffer = 0.13#seconds
+    buffer = 0.5#seconds
     last_request_time = 0
     current_time = 0
     last_calculated_time = 0
@@ -1002,47 +1004,47 @@ def song_view():
 
 
     while True:
-        #try:
-        if buffer< precise_time() - last_request_time:
-            
-            current = safe_spotify_request(sp.current_playback)
+        try:
+            if buffer< precise_time() - last_request_time:
+                
+                current = safe_spotify_request(sp.current_playback)
 
-            if current:
-                playing_status = update_playing_status()
+                if current:
+                    playing_status = update_playing_status()
 
-                update_playlist_name()
+                    update_playlist_name()
 
-                if current['item'] and previous_name != current['item']['name']:
-                    update_album_cover()
-                    update_next_up_tracks()
-                    song_length = get_song_length()
-                    update_song_length(song_length)
-                    update_track_name()
-                    update_artists()
+                    if current['item'] and previous_name != current['item']['name']:
+                        update_album_cover()
+                        update_next_up_tracks()
+                        song_length = get_song_length()
+                        update_song_length(song_length)
+                        update_track_name()
+                        update_artists()
 
-                update_shuffle_status()
-                update_liked_status()
+                    update_shuffle_status()
+                    update_liked_status()
 
-                current_time = get_time()
-                update_time(current_time)
+                    current_time = get_time()
+                    update_time(current_time)
 
-                add_progress_bar(current_time/song_length)
+                    add_progress_bar(current_time/song_length)
 
-                previous_name = current['item']['name']
-                previous_playing_status = playing_status
+                    previous_name = current['item']['name']
+                    previous_playing_status = playing_status
 
+                else:
+                    previous_name = None
             else:
-                previous_name = None
-        else:
-            current_time = last_calculated_time + precise_time() - last_request_time
-            update_time(current_time)
+                current_time = last_calculated_time + precise_time() - last_request_time
+                update_time(current_time)
+            
+            terminal_display.update(display_map)
         
-        terminal_display.update(display_map)
-        
-        #except KeyboardInterrupt:
-        #    return 0
-        #except:
-        #    pass
+        except KeyboardInterrupt:
+            sys.exit(0)
+        except:
+            pass
 
 
 
@@ -1065,13 +1067,5 @@ if __name__ == "__main__":
     display_map = CharacterMap(window_width, window_height, filler=' ', U1dtype=False)
 
     song_view()
-
-    """album_cover_url = 'https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0'
-
-    img = download_image(album_cover_url)
-    album_cover = img.to_color_shape_map(60,30)
-    display_map.add_map_array(ART_PLACES['cover_art'], album_cover.array)
-
-    terminal_display.update(display_map)"""
 
     print(colorama.Style.RESET_ALL) # End terminal formatting

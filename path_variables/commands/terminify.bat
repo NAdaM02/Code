@@ -1,4 +1,6 @@
 @echo off
 
-cd %USERPROFIlE%\Code\.projects\terminify
-py main.py
+cd %USERPROFILE%\Code\.projects\terminify
+python main.py
+
+exit > nul
