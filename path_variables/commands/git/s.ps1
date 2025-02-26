@@ -1,1 +1,1 @@
-& "sync.bat"
+sync.bat
