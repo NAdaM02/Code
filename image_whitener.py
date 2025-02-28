@@ -1,5 +1,6 @@
 import numpy as np
 from PIL import Image
+import argparse
 
 def apply_antialiasing(img, factor=2):
     width, height = img.size
@@ -7,8 +8,7 @@ def apply_antialiasing(img, factor=2):
     return img.resize((width, height), Image.LANCZOS)
 
 def convert_near_white_to_white(input_path, threshold=80):
-    output_path = input_path + f' - {round(threshold)}.jpg'
-    input_path = input_path + '.jpg'
+    output_path = input_path.replace(".jpg","").replace(".png","") + f' - {round(threshold)}.png'
     threshold = 1 - threshold/100
     img = Image.open(input_path)
     
@@ -27,9 +27,31 @@ def convert_near_white_to_white(input_path, threshold=80):
     output_img.save(output_path)
     print(f"Modified image saved as {output_path}")
 
-input_image = input('image to convert name: ')
+def get_parsed_inputs():
+    parser = argparse.ArgumentParser()
+    
+    for i in range(1,2+1): parser.add_argument(f'p{i}', type=str, nargs='?', default='')
+    
+    args = parser.parse_args()
 
-threshold_input = input('Give threshold [0-100]: ')
+    p1, p2 = args.p1, args.p2
+
+    if '.png' or '.jpg' in p1:
+        if p2 != "":
+            return p1, p2
+        else:
+            return p1, None
+    else:
+        return None, None
+
+
+input_image, threshold_input = get_parsed_inputs()
+
+if not input_image:
+    input_image = input('image to convert name: ')
+
+if not threshold_input:
+    threshold_input = input('Give threshold [0-100]: ')
 
 while threshold_input != "":
 
