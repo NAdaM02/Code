@@ -325,12 +325,15 @@ def get_parsed_inputs():
         pass
 
     elif '.png' or '.jpg' in p1:
-        if 'x' in p2:
-            width, height = map(int, p2.split('x'))
-        elif p3 == "":
+        if p2 == "":
             width, height = "IMG_SIZE", "IMG_SIZE"
-            convert_method = int(p2)
+        elif 'x' in p2:
+            width, height = map(int, p2.split('x'))
+        elif '%' in p2:
+            width, height = f"IMG_SIZEx{float(p2.strip('%')) /100}", f"IMG_SIZEx{float(p2.strip('%')) /100}"
         else:
+            convert_method = int(p2)
+        if p3 != "":
             convert_method = int(p3)
         write_image(image_path=p1, size=(width, height), convert_method=convert_method)
         sys.exit(0)
@@ -414,10 +417,19 @@ def write_szozat(char_width:int= None, char_height:int= None, char_row:int= 0, f
 def write_image(image_path:str, size:tuple= ("width", "height"), convert_method=cv2.INTER_LINEAR_EXACT):
     c_img = CustomImage(Image.open(image_path))
     width, height = size[0], size[1]
-    if size[0] == "IMG_SIZE":
-        width = c_img.array.shape[1]
-    if size[1] == "IMG_SIZE":
-        height = c_img.array.shape[0]
+
+    if "IMG_SIZE" in size[0]:
+        factor = 1
+        if size[0] != "IMG_SIZE":
+            factor = float(size[0].replace("IMG_SIZEx",""))
+        width = round(factor * c_img.array.shape[1])
+
+    if "IMG_SIZE" in size[1]:
+        factor = 1
+        if size[1] != "IMG_SIZE":
+            factor = float(size[1].replace("IMG_SIZEx",""))
+        height = round(factor * c_img.array.shape[0])
+
     img_map = c_img.to_color_shape_map(width, height, convert_method)
     terminal_display = TerminalDisplay(height)
     terminal_display.update(img_map)
