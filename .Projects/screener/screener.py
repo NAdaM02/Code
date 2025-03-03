@@ -418,17 +418,21 @@ def write_image(image_path:str, size:tuple= ("width", "height"), convert_method=
     c_img = CustomImage(Image.open(image_path))
     width, height = size[0], size[1]
 
-    if "IMG_SIZE" in size[0]:
-        factor = 1
-        if size[0] != "IMG_SIZE":
-            factor = float(size[0].replace("IMG_SIZEx",""))
-        width = round(factor * c_img.array.shape[1])
+    try:
+        if "IMG_SIZE" in size[0]:
+            factor = 1
+            if size[0] != "IMG_SIZE":
+                factor = float(size[0].replace("IMG_SIZEx",""))
+            width = round(factor * c_img.array.shape[1])
+    except: pass
 
-    if "IMG_SIZE" in size[1]:
-        factor = 1
-        if size[1] != "IMG_SIZE":
-            factor = float(size[1].replace("IMG_SIZEx",""))
-        height = round(factor * c_img.array.shape[0])
+    try:
+        if "IMG_SIZE" in size[1]:
+            factor = 1
+            if size[1] != "IMG_SIZE":
+                factor = float(size[1].replace("IMG_SIZEx",""))
+            height = round(factor * c_img.array.shape[0])
+    except: pass
 
     img_map = c_img.to_color_shape_map(width, height, convert_method)
     terminal_display = TerminalDisplay(height)

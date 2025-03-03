@@ -1,1 +1,1 @@
-Start-Process "$env:USERPROFILE\Discord"
+& "$env:USERPROFILE\Code\.Projects\discordo\discordo.exe"
