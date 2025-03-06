@@ -548,7 +548,7 @@ CHAR_LIST = tuple("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345678
  
 CHAR_COUNT = len(CHAR_LIST)
 
-CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'Data/Characters/{i}.png')) ) for i in range(CHAR_COUNT)}
+CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'./Data/Characters/{i}.png')) ) for i in range(CHAR_COUNT)}
 
 CHAR_WIDTH_PER_HEIGHT = 117/232
 
