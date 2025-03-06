@@ -67,14 +67,11 @@ class CharacterMap:
     
     def __getitem__(self, key):
         x, y = key
-        return self.array[self.height-y-1, x]
+        return self.array[self.height-y-1][x]
     
     def __setitem__(self, key, value):
         x, y = key
-        self.array[self.height-y-1, x] = value
-
-    def get(self):
-        return self.array
+        self.array[self.height-y-1][x] = value
         
     def fill(self, fill='??'):
         if fill == '??':
@@ -370,56 +367,6 @@ def flashScreen(display_map:CharacterMap, terminal_display:TerminalDisplay, fps:
         terminal_display.update(display_map, fps=frame_time)
 
 
-def write_text(text:str= "", char_width:int= None, char_height:int= None, char_row:int= 0, fps:float= 0):
-    if not char_height:  char_height = char_width//CHAR_WIDTH_PER_HEIGHT
-    if not char_width:  char_width = char_height*CHAR_WIDTH_PER_HEIGHT
-
-    char_width = int(char_width);  char_height = int(char_height)
-
-    text_chars_list = tuple(text)
-    char_maps = [CHAR_IMAGES[char].to_map(char_width, char_height, grayed=True) for char in text_chars_list]
-
-    text_char_count = len(text)
-
-    render_char_count = display_map.width//char_width + 3
-    all_steps_count = display_map.width + char_width*(text_char_count+1)
-
-    for step_index in range(all_steps_count):
-        display_map.fill()
-        
-        render_char_start_index = max(0, int(step_index/char_width) - render_char_count+1)
-        render_char_end_index = min(render_char_start_index + render_char_count, text_char_count)
-
-        for char_index in range( render_char_start_index, render_char_end_index ):
-            #try:
-            display_map.render_char(char_width, char_height, display_map.width - step_index + char_width*char_index, char_row)
-            #except:
-            #    display_map.fill("!")
-        
-        terminal_display.update(display_map, fps=fps)
-        
-
-def write_szozat(char_width:int= None, char_height:int= None, char_row:int= 0, fps:float= 0):
-    verses = [
-        'Hazádnak rendületlenűl  Légy híve, oh magyar;  Bölcsőd az s majdan sírod is,  Mely ápol s eltakar.',
-        'A nagy világon e kivűl  Nincsen számodra hely;  Áldjon vagy verjen sors keze;  Itt élned, halnod kell.',
-        'Ez a föld, melyen annyiszor Apáid vére folyt; Ez, melyhez minden szent nevet Egy ezredév csatolt.',
-        'Itt küzdtenek honért a hős  Árpádnak hadai;  Itt törtek össze rabigát  Hunyadnak karjai.',
-        'Szabadság! itten hordozák  Véres zászlóidat,  S elhulltanak legjobbjaink  A hosszu harc alatt.',
-        'És annyi balszerencse közt,  Oly sok viszály után,  Megfogyva bár, de törve nem,  Él nemzet e hazán.',
-        'S népek hazája, nagy világ!  Hozzád bátran kiált:  ^Egy ezredévi szenvedés  Kér éltet vagy halált!^',
-        'Az nem lehet hogy annyi szív  Hiában onta vért,  S keservben annyi hű kebel  Szakadt meg a honért.',
-        'Az nem lehet, hogy ész, erő,  És oly szent akarat  Hiába sorvadozzanak  Egy átoksúly alatt.',
-        'Még jőni kell, még jőni fog  Egy jobb kor, mely után  Buzgó imádság epedez  Százezrek ajakán.',
-        'Vagy jőni fog, ha jőni kell,  A nagyszerű halál,  Hol a temetkezés fölött  Egy ország vérben áll.',
-        'S a sírt, hol nemzet sűlyed el,  Népek veszik körűl,  S az ember millióinak  Szemében gyászköny űl.',
-        'Légy híve rendületlenűl  Hazádnak, oh magyar:  Ez éltetőd, s ha elbukál,  Hantjával ez takar.',
-        'A nagy világon e kivűl  Nincsen számodra hely;  Áldjon vagy verjen sors keze:  Itt élned, halnod kell.',
-    ]
-    #for verse in verses: write_text(verse, char_width, char_height, char_row, fps)
-    write_text("  /  ".join(verses), char_width, char_height, char_row, fps=fps)
-
-
 def write_image(image_path:str, size:tuple= ("width", "height"), convert_method=cv2.INTER_LINEAR_EXACT):
     c_img = CustomImage(Image.open(image_path))
     width, height = size[0], size[1]
@@ -548,10 +495,6 @@ CHAR_LIST = tuple("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345678
  
 CHAR_COUNT = len(CHAR_LIST)
 
-CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'Data/Characters/{i}.png')) ) for i in range(CHAR_COUNT)}
-
-CHAR_WIDTH_PER_HEIGHT = 117/232
-
 CHARACTER_SHAPES = (
     ((9.2, 246.45, 0.36), (0.0, 15.92, 1.84), (0.0, 0.0, 0.0)),
     ((0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 146.16, 0.0)),
@@ -647,42 +590,20 @@ CHARACTER_SHAPES = (
 )
 
 
-"""if __name__ == "__main__":
+"""
+#char_width, char_height = 20, 30
+#char_row = (display_map.height-char_height)//2
 
-    colorama.init() # Initialize terminal formatting
+write_text('911 was an inside job...', char_width, char_height, char_row, 0.001*20/4)
 
+write_szozat(char_width, char_height, char_row, 0.001)
+"""
+"""
+graph_map = make_graph(lambda x: -1**(x) + 2**(-(x)), (120, 120))
 
-    os.system('cls')
+terminal_display = TerminalDisplay(graph_map.height)
 
-    #start_display_width, start_display_height = get_terminal_display_size()
-    #display_map = CharacterMap(start_display_width, start_display_height, filler=" ")
-    #terminal_display = TerminalDisplay(start_display_height)
-    #monitor = Monitor()
-    #terminal_display.update(display_map)
-
-    #char_width, char_height = 20, 30
-    #char_row = (display_map.height-char_height)//2
-
-    #write_text('911 was an inside job...', char_width, char_height, char_row, 0.001*20/4)
-    
-    #write_szozat(char_width, char_height, char_row, 0.001)
-
-    
-    #graph_map = make_graph(lambda x: np.sin(x), (121, 30), x_range=(-10, 10), y_range=(-1, 1), mark_counts=(11, 3), marker="×")
-
-    #graph_map = make_graph(lambda x: x**2, (80, 40), x_range=(-5, 5), y_range=(0, 25))
-
-    #graph_map = make_graph(lambda x: x**2, (100, 100))
-
-
-    graph_map = make_graph(lambda x: -1**(x) + 2**(-(x)), (120, 120))
-
-    terminal_display = TerminalDisplay(graph_map.height)
-
-    terminal_display.update(graph_map)
-
-
-    print(colorama.Style.RESET_ALL)  # Reset terminal formatting
+terminal_display.update(graph_map)
 """
 
 if __name__ == "__main__":
@@ -690,8 +611,7 @@ if __name__ == "__main__":
     bottom_text = ""
     GLOBAL_last_frame_time = 0
 
-    os.system('cls')
-
+    """
     width, height, convert_method = get_parsed_inputs()
 
     display_map = CharacterMap(width, height)
@@ -699,7 +619,7 @@ if __name__ == "__main__":
     terminal_display = TerminalDisplay(height)
 
 
-
+    os.system('cls')
     colorama.init() # Initialize terminal formatting
 
 
@@ -712,3 +632,4 @@ if __name__ == "__main__":
     terminal_display.clear()
     
     print(colorama.Style.RESET_ALL)  # Reset terminal formatting
+    """
