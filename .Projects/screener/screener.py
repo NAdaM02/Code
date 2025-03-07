@@ -14,6 +14,8 @@ from colorama import Fore, Style
 from scipy.spatial.distance import cdist
 import sys
 
+DOT = (os.path.dirname(__file__)).replace('\\','/')
+
 
 def print_separated(val_1, space_between:str, val_2):
     val_1_string = str(val_1)
@@ -548,7 +550,7 @@ CHAR_LIST = tuple("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ012345678
  
 CHAR_COUNT = len(CHAR_LIST)
 
-CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'./Data/Characters/{i}.png')) ) for i in range(CHAR_COUNT)}
+CHAR_IMAGES = {CHAR_LIST[i] : CustomImage( np.array(Image.open(f'{DOT}/Data/Characters/{i}.png')) ) for i in range(CHAR_COUNT)}
 
 CHAR_WIDTH_PER_HEIGHT = 117/232
 
