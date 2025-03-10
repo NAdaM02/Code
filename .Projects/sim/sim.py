@@ -33,16 +33,16 @@ def random_from(l: tuple):
     return l[randrange(0, len(l))]
 
 
-def move_in_random_direction():
+def move_in_random_direction(amount:int= 1):
     global dots
-    offsets = np.random.randint(-1, 2, size=dots.shape)
+    offsets = np.random.randint(-amount, amount+1, size=dots.shape)
     new_dots = dots + offsets
     out_of_bounds_mask = ~in_range(new_dots)
-    new_dots[out_of_bounds_mask] = dots[out_of_bounds_mask]  # Prevent moving out of bounds
+    new_dots[out_of_bounds_mask] = dots[out_of_bounds_mask]
     dots = new_dots
 
 
-def move_away(c_pos, away_from_pos, multiplier:float= 1):
+def move_away(c_pos, away_from_pos, multiplier:int= 1):
     direction = np.sign(c_pos - away_from_pos)
     return c_pos + direction * multiplier
 
@@ -67,7 +67,7 @@ def move_down():
     new_dots = dots.copy()
     new_dots[:, 1] -= 1
     out_of_bounds_mask = ~in_range(new_dots)
-    new_dots[out_of_bounds_mask] = dots[out_of_bounds_mask]  # Prevent moving out of bounds
+    new_dots[out_of_bounds_mask] = dots[out_of_bounds_mask]
     not_empty_mask = ~is_empty(new_dots)
     new_dots[not_empty_mask] = dots[not_empty_mask]
     dots = new_dots
@@ -77,20 +77,20 @@ def move_boulder_down():
     global boulder
     new_boulder = boulder + np.array([0, -1])
     if np.all(in_range(new_boulder)):
-        boulder[:] = new_boulder  # Move only if the entire boulder stays in bounds
+        boulder[:] = new_boulder
 
 
 def move_boulder_right():
     global boulder
     new_boulder = boulder + np.array([1, 0])
     if np.all(in_range(new_boulder)):
-        boulder[:] = new_boulder  # Move only if the entire boulder stays in bounds
+        boulder[:] = new_boulder
 
 def move_boulder_left():
     global boulder
     new_boulder = boulder + np.array([-1, 0])
     if np.all(in_range(new_boulder)):
-        boulder[:] = new_boulder  # Move only if the entire boulder stays in bounds
+        boulder[:] = new_boulder
 
 
 def move_away_from_boulder(distance:float= 2):
@@ -125,11 +125,13 @@ def render_dots(dot_char:str= '¤'):
 
 
 def calculate_change():
-    move_down()
     move_in_random_direction()
-    move_boulder_down()
+
     move_away_from_dots(1)
     move_away_from_boulder()
+
+    move_down()
+    move_boulder_down()
 
 
 def update_display(fps=7):
@@ -158,7 +160,7 @@ if __name__ == "__main__":
     
     while True:
         start = time_in_seconds()
-        while time_in_seconds() - start < 10:
+        while time_in_seconds() - start < 12:
             render_dots()
             update_display(fps=0)
 
@@ -166,7 +168,7 @@ if __name__ == "__main__":
             calculate_change()
         
         start = time_in_seconds()
-        while time_in_seconds() - start < 10:
+        while time_in_seconds() - start < 12:
             render_dots()
             update_display(fps=0)
 
