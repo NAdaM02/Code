@@ -3,7 +3,7 @@ from screener import *
 import numpy as np
 from itertools import product
 from math import ceil, sqrt
-from random import randrange
+from random import randrange, choice, randint
 
 def get_relative_neighbours(distance:float= 1):
     max_offset = ceil(distance)
@@ -13,11 +13,11 @@ def get_relative_neighbours(distance:float= 1):
     return np.column_stack((dx[mask], dy[mask]))
 
 
-def get_real_neighbours(pos, distance:float= 1):
+def get_possible_neighbours(pos, distance:float= 1):
     x, y = pos
     relative_neighbours = get_relative_neighbours(distance)
     neighbours = relative_neighbours + np.array([x, y])
-    return tuple(map(tuple, neighbours[in_range(neighbours)]))
+    return tuple(map(tuple, neighbours[is_possible(neighbours)]))
 
 
 def in_range(pos):
@@ -29,20 +29,23 @@ def is_empty(pos):
     return ~np.any(np.all(pos[:, np.newaxis, :] == dots[np.newaxis, :, :], axis=2), axis=1)
 
 def is_possible(pos):
-    return is_empty(pos[in_range(pos)])
+    pos = np.atleast_2d(pos)
+    valid_mask = in_range(pos)  # Ensure only valid positions are checked
+    result = np.zeros(len(pos), dtype=bool)
+    result[valid_mask] = is_empty(pos[valid_mask])
+    return result
 
 
 def random_from(l: tuple):
     return l[randrange(0, len(l))]
 
 
-def move_in_random_direction(amount:int= 1):
+def move_in_random_direction(amount:int = 1):
     global dots
-    offsets = np.random.randint(-amount, amount+1, size=dots.shape)
-    new_dots = dots + offsets
-    out_of_bounds_mask = ~in_range(new_dots)
-    new_dots[out_of_bounds_mask] = dots[out_of_bounds_mask]
-    dots = new_dots
+    for i, dot in enumerate(dots):
+        possible_neighbours = get_possible_neighbours(dot, distance=amount)
+        if possible_neighbours:
+            dots[i] = random_from(possible_neighbours)
 
 
 def move_away(c_pos, away_from_pos, multiplier:int= 1):
@@ -56,7 +59,7 @@ def move_away_from_dots(distance:float= 2):
     new_dots = dots_array.copy()
     
     for i, dot_pos in enumerate(dots_array):
-        neighbours = get_real_neighbours(tuple(dot_pos), distance=distance)
+        neighbours = get_possible_neighbours(tuple(dot_pos), distance=distance)
         if neighbours:
             nx, ny = random_from(neighbours)
             new_pos = move_away(dot_pos, np.array([nx, ny]))
@@ -65,125 +68,139 @@ def move_away_from_dots(distance:float= 2):
     dots = new_dots
 
 
-def move_down():
+"""def move_down():
     global dots
     new_dots = dots.copy()
     down_1 = dots.copy()
     down_2 = dots.copy()
     down_1[:, 1] -= 1
     down_2[:, 1] -= 2
-
-    down_2_possible = is_possible(down_2)
-
-    highlight(down_1[~down_2_possible])
     
-    down_1_possible_where_down_2_not_possible = is_possible(down_1[~down_2_possible])
-
+    down_2_possible = is_possible(down_2)
+    
+    down_1_possible = is_possible(down_1)
+    down_1_possible_where_down_2_not_possible = np.logical_and(~down_2_possible, down_1_possible)
+    
     new_dots[down_2_possible] = down_2[down_2_possible]
     new_dots[down_1_possible_where_down_2_not_possible] = down_1[down_1_possible_where_down_2_not_possible]
     
-    dots = new_dots
+    dots = new_dots"""
+def move_down():
+    global dots
+    down_1 = dots.copy()
+    down_1[:, 1] -= 1
+
+    not_possible = ~is_possible(down_1)
+
+    down_1[not_possible] = dots[not_possible]
+    
+    dots = down_1
 
 
-def move_boulder_down():
+
+def move_boulder(d:np.array= ['x', 'y']):
     global boulder
-    new_boulder = boulder + np.array([0, -1])
+    new_boulder = boulder + np.array(d)
     if np.all(in_range(new_boulder)):
         boulder[:] = new_boulder
 
 
-def move_boulder_right():
-    global boulder
-    new_boulder = boulder + np.array([1, 0])
-    if np.all(in_range(new_boulder)):
-        boulder[:] = new_boulder
+def move_boulder_left(event):
+    move_boulder([-1,  0 ])
 
-def move_boulder_left():
-    global boulder
-    new_boulder = boulder + np.array([-1, 0])
-    if np.all(in_range(new_boulder)):
-        boulder[:] = new_boulder
+def move_boulder_right(event):
+    move_boulder([ 1,  0 ])
+
+def move_boulder_down(event):
+    move_boulder([ 0, -1 ])
+
+def move_boulder_up(event):
+    move_boulder([ 0,  1 ])
+
+
 
 
 def move_away_from_boulder(distance:float= 2):
     global dots
     dots_array = np.array(dots)
-    distances = np.linalg.norm(dots_array[:, None] - boulder, axis=2)
-    close_mask = np.any(distances <= distance, axis=1)
-    
-    for i in np.where(close_mask)[0]:
-        bx, by = boulder[np.argmin(distances[i])]
-        new_pos = move_away(dots_array[i], np.array([bx, by]), multiplier=6)
-        if in_range(new_pos.reshape(1, -1))[0]:
-            dots_array[i] = new_pos
-    dots = dots_array
+    new_dots = dots_array.copy()
+
+    boulder_center = [boulder[0]+boulder_size//2]
+
+    for i, dot_pos in enumerate(dots_array):
+        is_inside_square = np.all(np.abs(dot_pos - boulder_center) <= (np.array(boulder_size) / 2) + distance)
+
+        if is_inside_square:
+            direction = np.sign(dot_pos - boulder_center)
+            
+            new_pos = dot_pos + direction * 2
+            
+            if is_possible(new_pos.reshape(1,-1))[0]:
+                new_dots[i] = new_pos
+
+    dots = new_dots
 
 
-def render_dots(dot_char:str= '¤'):
+def render_dots(dot_char:str= '×', boulder_char:str= '@'):
     global field_map
     
     field_map.fill()
     
-    dots_in_bounds = dots[in_range(dots)]
-    boulder_in_bounds = boulder[in_range(boulder)]
-    
-    for x, y in dots_in_bounds:
+    for x, y in dots:
         field_map[int(x), int(y)] = dot_char
     
-    for x, y in boulder_in_bounds:
-        field_map[int(x), int(y)] = "@"
+    for x, y in boulder:
+        field_map[int(x), int(y)] = boulder_char
     
     return field_map
 
 
 def calculate_change():
-    move_in_random_direction()
-
+    global frame
    # move_away_from_dots(1)
     move_away_from_boulder()
 
     move_down()
-    move_boulder_down()
+
+    move_in_random_direction()
+
+    frame += 1
 
 
-def update_display(fps=7):
+def update_display(fps=0):
     global terminal_display
     terminal_display.update(field_map, fps)
 
+
+
+
+import keyboard
+
+
+
 if __name__ == "__main__":
     screener.GLOBAL_last_frame_time = 0
-    global terminal_display, field_map, dots, boulder
+    global terminal_display, field_map, dots, boulder, frame
+    frame = 0
+
+    keyboard.on_press_key('a', move_boulder_left)
+    keyboard.on_press_key('d', move_boulder_right)
+    keyboard.on_press_key('s', move_boulder_down)
+    keyboard.on_press_key('w', move_boulder_up)
     
-    field_map = CharacterMap(60, 30, filler='.')
+    field_map = CharacterMap(60, 30, filler=' ')
     terminal_display = TerminalDisplay(field_map.height)
-    boulder_size = (10, 10)
+    boulder_size = np.array([10, 10])
+    boulder_speed = 0.4
     
     boulder = np.array([[i, j + 20] for i in range(boulder_size[0]) for j in range(boulder_size[1])])
-    dots = np.random.randint([0, 0], [field_map.width, field_map.height], size=(600, 2))
+    dots = np.random.randint([0, 0], [field_map.width, field_map.height], size=(400, 2))
     
     os.system('cls')
     colorama.init()
     start = time_in_seconds()
     
-    while time_in_seconds() - start < 6:
-        render_dots()
-        update_display(fps=0)
-        calculate_change()
-    
     while True:
-        start = time_in_seconds()
-        while time_in_seconds() - start < 12:
-            render_dots()
-            update_display(fps=0)
-
-            move_boulder_right()
-            calculate_change()
-        
-        start = time_in_seconds()
-        while time_in_seconds() - start < 12:
-            render_dots()
-            update_display(fps=0)
-
-            move_boulder_left()
-            calculate_change()
-
+        render_dots()
+        update_display()
+        calculate_change()
