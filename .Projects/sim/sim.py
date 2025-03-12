@@ -28,6 +28,9 @@ def is_empty(pos):
     pos = np.atleast_2d(pos)  # Ensure input is always 2D
     return ~np.any(np.all(pos[:, np.newaxis, :] == dots[np.newaxis, :, :], axis=2), axis=1)
 
+def is_possible(pos):
+    return is_empty(pos[in_range(pos)])
+
 
 def random_from(l: tuple):
     return l[randrange(0, len(l))]
@@ -65,11 +68,20 @@ def move_away_from_dots(distance:float= 2):
 def move_down():
     global dots
     new_dots = dots.copy()
-    new_dots[:, 1] -= 1
-    out_of_bounds_mask = ~in_range(new_dots)
-    new_dots[out_of_bounds_mask] = dots[out_of_bounds_mask]
-    not_empty_mask = ~is_empty(new_dots)
-    new_dots[not_empty_mask] = dots[not_empty_mask]
+    down_1 = dots.copy()
+    down_2 = dots.copy()
+    down_1[:, 1] -= 1
+    down_2[:, 1] -= 2
+
+    down_2_possible = is_possible(down_2)
+
+    highlight(down_1[~down_2_possible])
+    
+    down_1_possible_where_down_2_not_possible = is_possible(down_1[~down_2_possible])
+
+    new_dots[down_2_possible] = down_2[down_2_possible]
+    new_dots[down_1_possible_where_down_2_not_possible] = down_1[down_1_possible_where_down_2_not_possible]
+    
     dots = new_dots
 
 
@@ -127,7 +139,7 @@ def render_dots(dot_char:str= '¤'):
 def calculate_change():
     move_in_random_direction()
 
-    move_away_from_dots(1)
+   # move_away_from_dots(1)
     move_away_from_boulder()
 
     move_down()
