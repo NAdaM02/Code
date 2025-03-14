@@ -21,23 +21,23 @@ def get_possible_neighbours(pos, distance:float= 1):
 
 
 def in_range(pos):
-    pos = np.atleast_2d(pos)  # Ensure input is always 2D
+    pos = np.atleast_2d(pos)
     return np.logical_and.reduce((0<= pos[:, 0], pos[:, 0] < field_map.width,
                                   0<= pos[:, 1], pos[:, 1] < field_map.height))
 def is_empty(pos):
-    pos = np.atleast_2d(pos)  # Ensure input is always 2D
+    pos = np.atleast_2d(pos)
     return ~np.any(np.all(pos[:, np.newaxis, :] == dots[np.newaxis, :, :], axis=2), axis=1)
 
 def is_possible(pos):
     pos = np.atleast_2d(pos)
-    valid_mask = in_range(pos)  # Ensure only valid positions are checked
+    valid_mask = in_range(pos)
     result = np.zeros(len(pos), dtype=bool)
     result[valid_mask] = is_empty(pos[valid_mask])
     return result
 
 
 def random_from(l: tuple):
-    return l[randrange(0, len(l))]
+    return l[randrange(len(l))]
 
 
 def move_in_random_direction(amount:int = 1):
@@ -95,11 +95,14 @@ def move_down():
     down_1[not_possible] = dots[not_possible]
     
     dots = down_1
-
+    
 
 
 def move_boulder(d:np.array= ['x', 'y']):
-    global boulder
+    global boulder, last_boulder_move_frame
+
+    last_boulder_move_frame = frame
+    
     new_boulder = boulder + np.array(d)
     if np.all(in_range(new_boulder)):
         boulder[:] = new_boulder
@@ -122,26 +125,34 @@ def move_boulder_up(event):
 
 def move_away_from_boulder(distance:float= 2):
     global dots
+
     dots_array = np.array(dots)
     new_dots = dots_array.copy()
 
-    boulder_center = [boulder[0]+boulder_size//2]
+    boulder_center = [boulder[0]+BOULDER_SIZE//2]
+
+    factor = 1
+    d = 1
+    if frame-last_boulder_move_frame< BOULDER_EFFECT_DECAY:
+        factor = BOULDER_EFFECT_AMOUNT
+        d = distance
 
     for i, dot_pos in enumerate(dots_array):
-        is_inside_square = np.all(np.abs(dot_pos - boulder_center) <= (np.array(boulder_size) / 2) + distance)
-
+        is_inside_square = np.all(np.abs(dot_pos - boulder_center) <= (np.array(BOULDER_SIZE) / 2) + d)
+        
         if is_inside_square:
             direction = np.sign(dot_pos - boulder_center)
-            
-            new_pos = dot_pos + direction * 2
-            
+    
+            new_pos = dot_pos + direction * factor
+                
             if is_possible(new_pos.reshape(1,-1))[0]:
                 new_dots[i] = new_pos
-
+    
+    
     dots = new_dots
 
 
-def render_dots(dot_char:str= '×', boulder_char:str= '@'):
+def render_dots(dot_char:str= '¤', boulder_char:str= '*'):
     global field_map
     
     field_map.fill()
@@ -158,9 +169,8 @@ def render_dots(dot_char:str= '×', boulder_char:str= '@'):
 def calculate_change():
     global frame
    # move_away_from_dots(1)
-    move_away_from_boulder()
 
-    move_down()
+    move_away_from_boulder(BOULDER_EFFECT_DISTANCE)
 
     move_in_random_direction()
 
@@ -180,27 +190,47 @@ import keyboard
 
 if __name__ == "__main__":
     screener.GLOBAL_last_frame_time = 0
-    global terminal_display, field_map, dots, boulder, frame
-    frame = 0
+    global terminal_display, field_map, dots, boulder, frame, last_boulder_move_frame, BOULDER_EFFECT_DECAY, BOULDER_EFFECT_AMOUNT, BOULDER_EFFECT_DISTANCE
 
+
+    # --- CONSTANTS ---
+    BOULDER_EFFECT_DISTANCE = 2
+    BOULDER_EFFECT_AMOUNT = 4
+    BOULDER_EFFECT_DECAY = 3
+    DOT_CHAR = '¤'
+    BOULDER_CHAR = '@'
+    BOULDER_SIZE = (8, 8)
+    DOTS_AMOUNT = 240
+    MAP_SIZE = (50, 40)
+
+
+    # ~~ Hook keys
     keyboard.on_press_key('a', move_boulder_left)
     keyboard.on_press_key('d', move_boulder_right)
     keyboard.on_press_key('s', move_boulder_down)
     keyboard.on_press_key('w', move_boulder_up)
     
-    field_map = CharacterMap(60, 30, filler=' ')
+    # ~~ Initialize field_map, terminal_display
+    field_map = CharacterMap(MAP_SIZE[0], MAP_SIZE[1], filler=' ')
     terminal_display = TerminalDisplay(field_map.height)
-    boulder_size = np.array([10, 10])
-    boulder_speed = 0.4
     
-    boulder = np.array([[i, j + 20] for i in range(boulder_size[0]) for j in range(boulder_size[1])])
-    dots = np.random.randint([0, 0], [field_map.width, field_map.height], size=(400, 2))
+    # ~~ Create boulder
+    BOULDER_SIZE = np.array(BOULDER_SIZE)
+    boulder = np.array([[i, j] for i in range(BOULDER_SIZE[0]) for j in range(BOULDER_SIZE[1])])
     
+    # ~~ Create dots
+    dots = np.random.randint([0, 0], [field_map.width, field_map.height], size=(DOTS_AMOUNT, 2))
+    
+    # ~~ Initialize screen
     os.system('cls')
     colorama.init()
+
+    # ~~ Set global variables
     start = time_in_seconds()
+    frame = 0
+    last_boulder_move_frame = float('-inf')
     
     while True:
-        render_dots()
+        render_dots(DOT_CHAR, BOULDER_CHAR)
         update_display()
         calculate_change()
