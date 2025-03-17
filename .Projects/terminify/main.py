@@ -563,7 +563,12 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
 
 
 def contracted_art_to_array(art):
-    return np.array([tuple(string) for string in art])
+    strings_list = []
+    for string in art:
+        st = tuple(c + Fore.WHITE for c in string)
+        strings_list.append(st)
+    #highlight(strings_list)
+    return np.array(strings_list)
 
 for key in ART_ARRAYS.keys():
     ART_ARRAYS[key] = contracted_art_to_array(ART_ARRAYS[key])
@@ -840,7 +845,7 @@ def update_album_cover():
         album_cover_url = get_album_cover_url() # 'https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0' # 
         downloaded_image = download_image(album_cover_url)
 
-        for tw, th in ((30,30),(90,90)): Image.fromarray(downloaded_image.downscale(tw,th).array).save(f"album_cover-{tw}x{th}.png")
+        #for tw, th in ((30,30),(90,90)): Image.fromarray(downloaded_image.downscale(tw,th).array).save(f"album_cover-{tw}x{th}.png")
 
         album_cover = downloaded_image.to_color_shape_map(60,30)
 
