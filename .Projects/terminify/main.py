@@ -274,7 +274,7 @@ class TerminalDisplay:
         os.system('cls')
     
     def write(self, display_map:CharacterMap):
-        output = "\n" + "\n".join((" ".join(row) for row in display_map.array)) + Fore.WHITE
+        output = "\n" + "\n".join((f"{Fore.WHITE}".join(row) for row in display_map.array)) + Fore.WHITE
         self.to_beginning()
         stdout.write(output)
         stdout.flush()
@@ -563,12 +563,7 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
 
 
 def contracted_art_to_array(art):
-    strings_list = []
-    for string in art:
-        st = tuple(c + Fore.WHITE for c in string)
-        strings_list.append(st)
-    #highlight(strings_list)
-    return np.array(strings_list)
+    return np.array([tuple(string) for string in art])
 
 for key in ART_ARRAYS.keys():
     ART_ARRAYS[key] = contracted_art_to_array(ART_ARRAYS[key])
