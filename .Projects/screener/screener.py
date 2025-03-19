@@ -708,7 +708,7 @@ if __name__ == "__main__":
     while True:
         monitor_image = CustomImage().be_screenshot()
         display_map = monitor_image.to_color_shape_map(width, height, convert_method)
-        terminal_display.update(display_map, fps=7)
+        terminal_display.update(display_map,)
         #if bottom_text != "": print(f"\n{Fore.WHITE}{bottom_text}")
     
     terminal_display.clear()
