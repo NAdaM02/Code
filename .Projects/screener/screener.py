@@ -13,9 +13,10 @@ import argparse
 from colorama import Fore, Style
 from scipy.spatial.distance import cdist
 import sys
+import pywinctl
+import dxcam
 
 DOT = (os.path.dirname(__file__)).replace('\\','/')
-
 
 def print_separated(val_1, space_between:str, val_2):
     val_1_string = str(val_1)
@@ -193,8 +194,8 @@ class CustomImage:
 
         return self
 
-    def be_screenshot(self):
-        self.array = np.array(take_screenshot())
+    def be_screenshot(self, bbox=None):
+        self.array = np.array(sct.grab(bbox))
         return self
     
     def save_as_img(self, name:str= 'image'):
@@ -303,31 +304,32 @@ class CustomImage:
         return color_shape_map
 
 
-def get_terminal_display_size():
-    inp = input('input size coherent [11,14,19,28,56] or [16x9]:  ')
-    if inp == '':
-        width, height = 300, 40
-    elif ('x' not in inp) and ('*' not in inp):
-        x = int(inp)
-        width, height = x*16, x*9
-    else:
-        width, height = inp.split('x')
-        width=int(width); height=int(height)
-    
-    return width, height
 
+def figure_out_size(string:str) -> tuple[int, int]:
+    if 'x' in string:
+        width, height = map(int, string.split('x'))
+        return width, height
+    else:
+        try:
+            a = int(string)
+            return a*16, a*9
+        except:
+            return None, None
+   
 
 def get_parsed_inputs():
     parser = argparse.ArgumentParser()
     
-    for i in range(1,3+1): parser.add_argument(f'p{i}', type=str, nargs='?', default='')
+    for i in range(1,4+1): parser.add_argument(f'p{i}', type=str, nargs='?', default='')
     
     args = parser.parse_args()
 
-    p1, p2, p3 = args.p1, args.p2, args.p3
+    p1, p2, p3, p4 = args.p1, args.p2, args.p3, args.p4
 
     convert_method = cv2.INTER_LINEAR_EXACT
-    width, height = 13*16, 13*9
+    
+    bbox = None
+    width, height = None, None
 
     if p1 == '':
         pass
@@ -346,18 +348,58 @@ def get_parsed_inputs():
         write_image(image_path=p1, size=(width, height), convert_method=convert_method)
         sys.exit(0)
 
-    else:
-        if 'x' in p1:
-            width, height = map(int, p1.split('x'))
+    elif 'window' in p1 or 'app' in p1:
+        width, height = figure_out_size(p2)
+        
+        if p2 == "" or (width and height):
+            all_titles = pywinctl.getAllTitles()
+            a_ts = []
+            for title in all_titles:
+                if title != '':
+                    a_ts.append(title)
+            
+            print('--- AVAILABLE WINDOWS ---')
+            print()
+            print(''+'\n\n'.join(a_ts))
+            print()
+            print()
+            target_window = input('> Target window: ')
+                
+        elif p3 == "":
+            target_window = p2
         else:
-            a = int(p1)
-            width, height = a*16, a*9
+            target_window = p2
+            width, height = figure_out_size(p3)
+        
+        if p4 != "":
+            convert_method = int(p4)
+        
+        window = pywinctl.getWindowsWithTitle(target_window)
+        if window:
+            win = window[0]
+            bbox = (win.left, win.top, win.right, win.bottom)
+            if not (height and width):
+                c = 1
+                if '%' in p2:
+                    c = float(p2.strip('%')) / 100
+                if '%' in p3:
+                    c = float(p3.strip('%')) / 100
+                width, height = int(c* win.width), int(c* win.height)
+
+        else:
+            print("Window not found!")
+            sys.exit(0)
+
+    else:
+        width, height = figure_out_size(p1)
 
         if p2 != "":
             convert_method = int(p2)
-        
+    
+    if width == None: width = 13*16
+    if height == None: height = 13*9
 
-    return width, height, convert_method
+    return width, height, convert_method, bbox
 
 
 def flashScreen(display_map:CharacterMap, terminal_display:TerminalDisplay, fps:float= 20):
@@ -691,10 +733,11 @@ if __name__ == "__main__":
     global GLOBAL_last_frame_time, bottom_text
     bottom_text = ""
     GLOBAL_last_frame_time = 0
+    sct = dxcam.create()
 
     os.system('cls')
 
-    width, height, convert_method = get_parsed_inputs()
+    width, height, convert_method, bbox = get_parsed_inputs()
 
     display_map = CharacterMap(width, height)
 
@@ -706,7 +749,7 @@ if __name__ == "__main__":
 
 
     while True:
-        monitor_image = CustomImage().be_screenshot()
+        monitor_image = CustomImage().be_screenshot(bbox)
         display_map = monitor_image.to_color_shape_map(width, height, convert_method)
         terminal_display.update(display_map,)
         #if bottom_text != "": print(f"\n{Fore.WHITE}{bottom_text}")
