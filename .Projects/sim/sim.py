@@ -130,7 +130,7 @@ def move_boulder(d:np.array= ['x', 'y']):
 
     last_boulder_move_frame = frame
     
-    new_boulder = boulder + np.array(d)
+    new_boulder = boulder + np.array(d)*2
     if np.all(in_range(new_boulder)):
         boulder[:] = new_boulder
 
@@ -156,8 +156,8 @@ def render_dots(dots:tuple[DotGroup, ...], dot_chars:tuple[str, ...], dot_colors
     for i in range(len(dots)):
         r, g, b = dot_colors[i]
         for x, y in dots[i]:
-            field_map[int(x), int(y)] = f"\033[38;2;{r};{g};{b}m{dot_chars[i]}"
-            #field_map[int(x), int(y)] = dot_chars[i]
+            #field_map[int(x), int(y)] = f"\033[38;2;{r};{g};{b}m{dot_chars[i]}"
+            field_map[int(x), int(y)] = dot_chars[i]
         
     return field_map
 
@@ -186,6 +186,7 @@ def calculate_change():
 
 def update_display(fps=0):
     global terminal_display
+    #highlight(field_map[0, 0], 0)
     terminal_display.update(field_map, fps)
 
 
