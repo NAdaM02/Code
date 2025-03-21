@@ -14,7 +14,7 @@ def get_relative_neighbours(distance:float= 1):
         return np.column_stack((dx[mask], dy[mask]))
 
 
-def get_possible_neighbours(pos, some_dots:tuple[np.array, np.array], distance:float= 1):
+def get_possible_neighbours(pos, some_dots:tuple[np.array, ...], distance:float= 1):
     x, y = pos
     relative_neighbours = get_relative_neighbours(distance)
     neighbours = relative_neighbours + np.array([x, y])
@@ -69,7 +69,7 @@ class DotGroup():
 
     def move_in_random_direction(self, amount:int = 1):
         for i, dot in enumerate(self.array):
-            possible_neighbours = get_possible_neighbours(dot, [dots.array]+self.other_dots, distance=amount)
+            possible_neighbours = get_possible_neighbours(dot, [self.array]+self.other_dots, distance=amount)
             if possible_neighbours:
                 self.array[i] = random_from(possible_neighbours)
 
@@ -92,7 +92,7 @@ class DotGroup():
         down_1 = self.array.copy()
         down_1[:, 1] -= 1
 
-        not_possible = ~is_possible(down_1, [dots.array]+self.other_dots)
+        not_possible = ~is_possible(down_1, [self.array]+self.other_dots)
 
         down_1[not_possible] = self.array[not_possible]
         
@@ -117,7 +117,7 @@ class DotGroup():
         
                 new_pos = dot_pos + direction * factor
                     
-                if is_possible(new_pos.reshape(1,-1), [dots.array]+self.other_dots)[0]:
+                if is_possible( new_pos.reshape(1,-1), [self.array]+self.other_dots )[0]:
                     new_dots[i] = new_pos
         
         
@@ -148,17 +148,17 @@ def move_boulder_up(event):
     move_boulder([ 0,  1 ])
 
 
-def render_dots(dot_char:str= '¤', boulder_char:str= '*'):
+def render_dots(dots:tuple[DotGroup, ...], dot_chars:tuple[str, ...], dot_colors:tuple[tuple[int, int, int], ...]):
     global field_map
     
     field_map.fill()
     
-    for x, y in dots:
-        field_map[int(x), int(y)] = dot_char
-    
-    for x, y in boulder:
-        field_map[int(x), int(y)] = boulder_char
-    
+    for i in range(len(dots)):
+        r, g, b = dot_colors[i]
+        for x, y in dots[i]:
+            field_map[int(x), int(y)] = f"\033[38;2;{r};{g};{b}m{dot_chars[i]}"
+            #field_map[int(x), int(y)] = dot_chars[i]
+        
     return field_map
 
 
@@ -166,11 +166,20 @@ def calculate_change():
     global frame
    # move_away_from_dots(1)
 
-    dots.other_dots = [boulder]
+    water_particles.other_dots = [boulder]
 
-    dots.move_away_from_boulder(BOULDER_EFFECT_DISTANCE)
+    water_particles.move_away_from_boulder(BOULDER_EFFECT_DISTANCE)
 
-    dots.move_in_random_direction()
+    water_particles.move_in_random_direction()
+
+    water_particles.move_down()
+
+
+    air_particles.other_dots = [boulder, water_particles.array]
+
+    air_particles.move_away_from_boulder(BOULDER_EFFECT_DISTANCE)
+
+    air_particles.move_in_random_direction()
 
     frame += 1
 
@@ -195,8 +204,12 @@ if __name__ == "__main__":
     BOULDER_EFFECT_DISTANCE = 2
     BOULDER_EFFECT_AMOUNT = 4
     BOULDER_EFFECT_DECAY = 3
-    DOT_CHAR = '¤'
-    BOULDER_CHAR = '@'
+    DOT_CHARS = ('¤', '.', '@')
+    DOT_COLORS = (
+                    (0  , 0  , 255),
+                    (255, 255, 255),
+                    (0  , 255, 0  ))
+    DOT_AMOUNTS = (250, 250)
     BOULDER_SIZE = (8, 8)
     DOTS_AMOUNT = 240
     MAP_SIZE = (50, 40)
@@ -209,7 +222,7 @@ if __name__ == "__main__":
     keyboard.on_press_key('w', move_boulder_up)
     
     # ~~ Initialize field_map, terminal_display
-    field_map = CharacterMap(MAP_SIZE[0], MAP_SIZE[1], filler=' ')
+    field_map = CharacterMap(MAP_SIZE[0], MAP_SIZE[1], filler=' ', U1dtype=False)
     terminal_display = TerminalDisplay(field_map.height)
     
     # ~~ Create boulder
@@ -217,8 +230,9 @@ if __name__ == "__main__":
     boulder = np.array([[i, j] for i in range(BOULDER_SIZE[0]) for j in range(BOULDER_SIZE[1])])
     
     # ~~ Create dots
-    random_places = np.random.randint([0, 0], [field_map.width, field_map.height], size=(DOTS_AMOUNT, 2))
-    dots = DotGroup(random_places)
+    water_particles = DotGroup(np.random.randint([0, 0], [field_map.width, field_map.height], size=(DOT_AMOUNTS[0], 2)))
+
+    air_particles = DotGroup(np.random.randint([0, 0], [field_map.width, field_map.height], size=(DOT_AMOUNTS[1], 2)))
 
     # ~~ Initialize screen
     os.system('cls')
@@ -230,6 +244,6 @@ if __name__ == "__main__":
     last_boulder_move_frame = float('-inf')
     
     while True:
-        render_dots(DOT_CHAR, BOULDER_CHAR)
+        render_dots((water_particles, air_particles, boulder), DOT_CHARS, DOT_COLORS)
         update_display()
         calculate_change()
