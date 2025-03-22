@@ -2,4 +2,4 @@
 
 pip install spotipy --upgrade > nul
 
-python main.py
+python terminify.py

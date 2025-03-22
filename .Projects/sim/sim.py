@@ -117,7 +117,8 @@ class DotGroup():
         
                 new_pos = dot_pos + direction * factor
                     
-                if is_possible( new_pos.reshape(1,-1), [self.array]+self.other_dots )[0]:
+                #if is_possible( new_pos.reshape(1,-1), [self.array]+self.other_dots )[0]:
+                if in_range(new_pos.reshape(1,-1)):
                     new_dots[i] = new_pos
         
         
@@ -130,7 +131,7 @@ def move_boulder(d:np.array= ['x', 'y']):
 
     last_boulder_move_frame = frame
     
-    new_boulder = boulder + np.array(d)*2
+    new_boulder = boulder + np.array(d)
     if np.all(in_range(new_boulder)):
         boulder[:] = new_boulder
 
@@ -156,8 +157,7 @@ def render_dots(dots:tuple[DotGroup, ...], dot_chars:tuple[str, ...], dot_colors
     for i in range(len(dots)):
         r, g, b = dot_colors[i]
         for x, y in dots[i]:
-            #field_map[int(x), int(y)] = f"\033[38;2;{r};{g};{b}m{dot_chars[i]}"
-            field_map[int(x), int(y)] = dot_chars[i]
+            field_map[int(x), int(y)] = f"\033[38;2;{r};{g};{b}m{dot_chars[i]}"
         
     return field_map
 
@@ -207,9 +207,9 @@ if __name__ == "__main__":
     BOULDER_EFFECT_DECAY = 3
     DOT_CHARS = ('¤', '.', '@')
     DOT_COLORS = (
-                    (0  , 0  , 255),
+                    (20 , 20 , 255),
                     (255, 255, 255),
-                    (0  , 255, 0  ))
+                    (20 , 255, 50 ))
     DOT_AMOUNTS = (250, 250)
     BOULDER_SIZE = (8, 8)
     DOTS_AMOUNT = 240
@@ -240,7 +240,6 @@ if __name__ == "__main__":
     colorama.init()
 
     # ~~ Set global variables
-    start = time_in_seconds()
     frame = 0
     last_boulder_move_frame = float('-inf')
     

@@ -30,38 +30,19 @@ def highlight(var:any, for_seconds:float= 10):
     print()
     wait(for_seconds)
 
-def srgb_to_linear(c):
-    c = c / 255.0
-    return np.where(c <= 0.04045, c / 12.92, ((c + 0.055) / 1.055) ** 2.4)
-
-def linear_to_srgb(c):
-    c = np.clip(c, 0, 1)
-    return np.where(c <= 0.0031308, c * 12.92, 1.055 * (c ** (1/2.4)) - 0.055) * 255
-
-def brighten_rgb(rgb, factor=2):
-    linear_rgb = srgb_to_linear(np.array(rgb, dtype=np.float32))
-    
-    brightened_srgb = linear_to_srgb(linear_rgb*factor)
-    
-    return np.round(brightened_srgb).astype(int)
-
 
 class CharacterMap:
     def __init__(self, width:int, height:int, d_list:tuple= None, filler:str= ' ', U1dtype:bool= True): 
         if d_list:
             self.width = len(d_list[0])
             self.height = len(d_list)
-            if U1dtype:
-                self.array = np.array(d_list, dtype='<U1')
-            else:
-                self.array = np.array(d_list, dtype=np.object_)
+            self.array = np.array(d_list, dtype='<U1')
         else:
             self.width = width
             self.height = height
-            if U1dtype:
-                self.array = np.full(((height, width)), filler, dtype='<U1')
-            else:
-                self.array = np.full(((height, width)), filler, dtype=np.object_)
+            self.array = np.full(((height, width)), filler, dtype='<U1')
+        if not U1dtype:
+            self.array = self.array.astype(np.object_)
 
         self.filler = filler
     
@@ -79,7 +60,7 @@ class CharacterMap:
         else:
             filler = fill
 
-        self.array = np.full(((self.height, self.width)), filler, dtype='<U1')
+        self.array[:, :] = filler
         return self.array
     
     def get_subarray(self, first_rows:int= None, last_rows:int= None, first_columns:int= None, last_columns:int= None):

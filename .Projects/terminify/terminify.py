@@ -178,22 +178,23 @@ class CharacterMap:
         if d_list:
             self.width = len(d_list[0])
             self.height = len(d_list)
-            if U1dtype:
-                self.array = np.array(d_list, dtype='<U1')
-            else:
-                self.array = np.array(d_list, dtype=np.object_)
+            self.array = np.array(d_list, dtype='<U1')
         else:
             self.width = width
             self.height = height
-            if U1dtype:
-                self.array = np.full(((height, width)), filler, dtype='<U1')
-            else:
-                self.array = np.full(((height, width)), filler, dtype=np.object_)
+            self.array = np.full(((height, width)), filler, dtype='<U1')
+        if not U1dtype:
+            self.array = self.array.astype(np.object_)
 
         self.filler = filler
     
-    def get(self):
-        return self.array
+    def __getitem__(self, key):
+        x, y = key
+        return self.array[self.height-y-1][x]
+    
+    def __setitem__(self, key, value):
+        x, y = key
+        self.array[self.height-y-1][x] = value
         
     def fill(self, fill='??'):
         if fill == '??':
@@ -201,7 +202,7 @@ class CharacterMap:
         else:
             filler = fill
 
-        self.array = np.full(((self.height, self.width)), filler, dtype='<U1')
+        self.array[:, :] = filler
         return self.array
     
     def get_subarray(self, first_rows:int= None, last_rows:int= None, first_columns:int= None, last_columns:int= None):
