@@ -476,7 +476,7 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
     '5x4_minute_0' : [" "*5]*4,
     '5x4_minute_1' : [" "*5]*4,
     'divider_colon' : ("¤", "¤"),
-    'lyrics' : [" "*34]*2 + ["."*34] + [" "*34]*2 + ["˙"*34] + [" "*34]*4,
+    'lyrics' : [" "*33]*2 + ["."*33] + [" "*33]*2 + ["˙"*33] + [" "*33]*4,
 }
 
 
@@ -693,11 +693,13 @@ def update_time(secs):
         terminal_display.update(display_map)
 
 
-def add_progress_bar(progress):
+def update_progress_bar(progress):
     progress = round(progress*60)
     progress_bar_string = "¤"*(progress-1) + "@" + "-"*(60-progress)
+    progress_bar = list(progress_bar_string)
+    if progress != len(progress_bar): progress_bar[progress] = f"\033[38;2;{100};{100};{100}m-"
 
-    display_map.add_map_array(ART_PLACES['progress_bar'], np.array([tuple(progress_bar_string)]))
+    display_map.add_map_array(ART_PLACES['progress_bar'], np.array([progress_bar], dtype=np.object_))
 
 
 def get_next_up_tracks():
@@ -830,7 +832,7 @@ def get_current_lyrics_part(lyrics, current_time, previous_lines_count, next_lin
 
 def update_lyrics(lyrics, current_time, previous_lines_count=2, next_lines_count=4):
     def get_two_rows(text, give_empty=True):
-        if len(text)<= 34:
+        if len(text)<= 33:
             if not give_empty:
                 return [text]
             else:
@@ -841,7 +843,7 @@ def update_lyrics(lyrics, current_time, previous_lines_count=2, next_lines_count
         for i in range(33, 0, -1):
             if text[i] == ' ':
                 first_row = text[:i]
-                second_row = text[i+1:68]
+                second_row = text[i+1:66]
                 break
         
         return [first_row, second_row]
@@ -850,7 +852,7 @@ def update_lyrics(lyrics, current_time, previous_lines_count=2, next_lines_count
 
     text_rows = []
 
-    is_multiple_rows = [34< len(text) for text in current_part]
+    is_multiple_rows = [33< len(text) for text in current_part]
     if is_multiple_rows[1]:
         text_rows += get_two_rows(current_part[1])
     elif is_multiple_rows[0]:
@@ -941,8 +943,10 @@ def get_current_artists():
 def update_artists():
     artists = get_current_artists()[ :len(ART_ARRAYS['artists'][0])]
     place_art('artists')
+    a_l = list(artists)
+    a_l[0] = Fore.WHITE + a_l[0]
 
-    display_map.add_map_array(ART_PLACES['artists'], np.array([tuple(artists)]))
+    display_map.add_map_array(ART_PLACES['artists'], np.array([a_l]))
 
     return artists
             
@@ -1027,7 +1031,7 @@ def song_view():
 
             update_time(current_time)
             
-            add_progress_bar(current_time/song_length)
+            update_progress_bar(current_time/song_length)
             
             update_lyrics(lyrics, current_time)
             
