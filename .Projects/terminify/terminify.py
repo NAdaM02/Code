@@ -694,7 +694,7 @@ def update_time(secs):
 
 
 def update_progress_bar(progress):
-    progress = round(progress*60)
+    progress = int(progress*60+1)
     progress_bar_string = "¤"*(progress-1) + "@" + "-"*(60-progress)
     progress_bar = list(progress_bar_string)
     if progress != len(progress_bar): progress_bar[progress] = f"\033[38;2;{100};{100};{100}m-"
@@ -1027,7 +1027,8 @@ def song_view():
                     previous_name = None
                 
             else:
-                current_time = last_calculated_time + precise_time() - last_request_time
+                if playing_status:
+                    current_time = last_calculated_time + precise_time() - last_request_time
 
             update_time(current_time)
             
@@ -1035,7 +1036,7 @@ def song_view():
             
             update_lyrics(lyrics, current_time)
             
-            terminal_display.update(display_map)
+            terminal_display.update(display_map, 10)
 
             print(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{40};{50};{50}m {round(precise_time() - last_request_time,1)}')
         
