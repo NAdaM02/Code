@@ -470,7 +470,7 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
     'track_name' : [" "*59],
     '3x3_line' : [" "*29]*3,
     'last_3x3' : [" "*3]*3,
-    'hour_dots' : ["˘"]*4,
+    'hour_dots' : [" "]*4,
     '5x4_second_0' : [" "*5]*4,
     '5x4_second_1' : [" "*5]*4,
     '5x4_minute_0' : [" "*5]*4,
@@ -1038,7 +1038,7 @@ def song_view():
             
             terminal_display.update(display_map, 10)
 
-            print(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{40};{50};{50}m {round(precise_time() - last_request_time,1)}')
+            print(f'\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}')
         
         except KeyboardInterrupt:
             sys.exit(0)
