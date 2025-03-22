@@ -298,8 +298,8 @@ class CustomImage:
 
 
 def figure_out_size(string:str) -> tuple[int, int]:
-    if 'x' in string:
-        width, height = map(int, string.split('x'))
+    if ':' in string:
+        width, height = map(int, string.split(':'))
         return width, height
     else:
         try:
