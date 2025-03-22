@@ -18,6 +18,7 @@ from io import BytesIO
 from colorama import Fore
 from spotipy.exceptions import SpotifyException
 from scipy.spatial.distance import cdist
+import re, syncedlyrics
 
 import sys
 
@@ -252,13 +253,6 @@ class CharacterMap:
         
         return self.array
 
-    def render_char(self, char_width:int, char_height:int, char_col:int, char_row:int):
-        shown = (0-char_width <= char_col <= self.width) and (0-char_height <= char_row <= self.height)
-        if shown:
-            self.add_map_array((char_col, char_row), self.array, exclude_chars=(" "))
-        
-        return shown
-
 
 class TerminalDisplay:
     def __init__(self, height:int= 512):
@@ -275,7 +269,7 @@ class TerminalDisplay:
         os.system('cls')
     
     def write(self, display_map:CharacterMap):
-        output = "\n" + "\n".join((f"{Fore.WHITE}".join(row) for row in display_map.array)) + Fore.WHITE
+        output = "\n" + "\n".join(("".join(row) for row in display_map.array)) + Fore.WHITE
         self.to_beginning()
         stdout.write(output)
         stdout.flush()
@@ -300,87 +294,10 @@ class CustomImage:
     def __init__(self, image_array:np.array= ()):
         self.array = np.array(image_array)
 
-    def gray(self):
-        lookup_table = np.array([(i / 255.0) ** 1.5 * 255 for i in range(256)], dtype=np.uint8)
-        self.array = cv2.LUT(cv2.cvtColor(self.array, cv2.COLOR_RGB2GRAY), lookup_table)
-
-        return self.array
-
     def downscale(self, target_width:int, target_height:int, method=cv2.INTER_LINEAR_EXACT):
         self.array = cv2.resize(self.array, (target_width, target_height), interpolation=method)
 
         return self
-
-    def be_screenshot(self):
-        self.array = np.array(take_screenshot())
-        return self
-    
-    def save_as_img(self, name:str= 'image'):
-        image = Image.fromarray(self.array)
-        return image.save(f'{name}.png')
-    
-    def save_as_text(self, name:str= 'text'):
-        return np.savetxt(f'{name}.txt', self.array, fmt='%f', delimiter=' ')
-    
-    def to_map(self, target_width:int= -1, target_height:int= -1, grayed:bool= False, sized:bool= False):
-        if not grayed: self.gray()
-        if not sized: self.downscale(target_width, target_height)
-
-        indices = np.digitize(self.array, THRESHOLDS)
-        img_map = CharacterMap(target_width, target_height)
-        img_map.array[:] = np.array(OPAS)[indices]
-        
-        return img_map
-    
-    def to_color_map(self, target_width:int= -1, target_height:int= -1):
-        self.downscale(target_width, target_height)
-
-        color_map = CharacterMap(target_width, target_height, U1dtype=False)
-
-        for y in range(target_height):
-            for x in range(target_width):
-                r, g, b = self.array[y, x].astype(np.int32)
-
-                luminance = 0.299 * r + 0.587 * g + 0.114 * b  
-
-                char_index = np.digitize(luminance, THRESHOLDS, right=True)
-                char_index = max(0, min(char_index, len(OPAS) - 1))
-                char = OPAS[char_index]
-
-                color_map.array[y, x] = f"\033[38;2;{r};{g};{b}m{char}"
-
-        return color_map
-
-    def to_shape_map(self, target_width:int= -1, target_height:int= -1, grayed:bool= False):
-        if not grayed: self.gray()
-        
-        self.downscale(target_width * 3, target_height * 3)
-        
-        height, width = self.array.shape
-        grid_rows = height // 3
-        grid_cols = width // 3
-        
-        reshaped_shapes = np.array(CHARACTER_SHAPES).reshape(len(CHARACTER_SHAPES), -1)
-        
-        grids = np.lib.stride_tricks.as_strided(
-            self.array,
-            shape=(grid_rows, grid_cols, 3, 3),
-            strides=(self.array.strides[0] * 3, self.array.strides[1] * 3, *self.array.strides)
-        )
-        
-        flattened_grids = grids.reshape(grid_rows * grid_cols, -1)
-        distances = cdist(flattened_grids, reshaped_shapes, metric='euclidean')
-        output_indices = np.argmin(distances, axis=1).reshape(grid_rows, grid_cols)
-        
-        img_map = CharacterMap(width=target_width, height=target_height)
-        
-        row_indices = (np.arange(target_height) * (grid_rows / target_height)).astype(int)
-        col_indices = (np.arange(target_width) * (grid_cols / target_width)).astype(int)
-        
-        indices_map = output_indices[row_indices[:, None], col_indices]
-        img_map.array = np.array(OPAS)[indices_map]
-        
-        return img_map
 
     def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, downscale_method:int= cv2.INTER_LINEAR_EXACT):
 
@@ -400,8 +317,8 @@ class CustomImage:
 
         grid_colors = np.mean(grids, axis=(2, 3)).astype(np.uint8)
 
-        gray_grids = np.mean(grids, axis=4).astype(np.uint8)  # Get grayscale version
-        flattened_grids = gray_grids.reshape(grid_rows * grid_cols, -1) # Flatten grayscale
+        gray_grids = np.mean(grids, axis=4).astype(np.uint8)
+        flattened_grids = gray_grids.reshape(grid_rows * grid_cols, -1)
 
         distances = cdist(flattened_grids, reshaped_shapes, metric='euclidean')
         output_indices = np.argmin(distances, axis=1).reshape(grid_rows, grid_cols)
@@ -541,30 +458,36 @@ ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
     'smart_shuffle' : ("@¸ ˛>", "  ¤  ", "~´ `>"),
     'like' :  (",-.-,", "', ,'", "  `  "),
     'liked' : (",=_=,", "\\"+"%"+"X%/", " ˇ÷ˇ "),
-    'cover_art' : [". "*30 for _ in range(30)],
-    'progress_bar' : [" "*60,],
-    'next_up' : ["NEXT UP",],
+    'cover_art' : [". "*30]*30,
+    'progress_bar' : [" "*60],
+    'next_up' : ["NEXT UP"],
     'next_up_serials' : [f"{i+1}." for i in range(9)],
-    'next_up_tracks' : [" "*27 for _ in range(9)],
-    'next_up_xs' : ["×" for _ in range(9)],
+    'next_up_tracks' : [" "*27]*9,
+    'next_up_xs' : ["×"]*9,
     'playing_from' : ["Playing from:"],
     'playlist' : [" "*47],
     'artists' : [" "*60],
     'track_name' : [" "*59],
-    '3x3_line' : [" "*29 for _ in range(3)],
-    'last_3x3' : [" "*3 for _ in range(3)],
-    'hour_dots' : [" " for _ in range(4)],
-    '5x4_second_0' : [" "*5 for _ in range(4)],
-    '5x4_second_1' : [" "*5 for _ in range(4)],
-    '5x4_minute_0' : [" "*5 for _ in range(4)],
-    '5x4_minute_1' : [" "*5 for _ in range(4)],
+    '3x3_line' : [" "*29]*3,
+    'last_3x3' : [" "*3]*3,
+    'hour_dots' : ["˘"]*4,
+    '5x4_second_0' : [" "*5]*4,
+    '5x4_second_1' : [" "*5]*4,
+    '5x4_minute_0' : [" "*5]*4,
+    '5x4_minute_1' : [" "*5]*4,
     'divider_colon' : ("¤", "¤"),
-
+    'lyrics' : [" "*34]*2 + ["."*34] + [" "*34]*2 + ["˙"*34] + [" "*34]*4,
 }
 
 
 def contracted_art_to_array(art):
-    return np.array([tuple(string) for string in art])
+    l = []
+    for string in art:
+        s = list(string)
+        s[0] = Fore.WHITE + s[0]
+        l.append(s)
+   
+    return np.array(l)
 
 for key in ART_ARRAYS.keys():
     ART_ARRAYS[key] = contracted_art_to_array(ART_ARRAYS[key])
@@ -597,6 +520,7 @@ ART_PLACES = {
     '5x4_minute_0' : (24, 73),
     '5x4_minute_1' : (24, 66),
     'divider_colon' : (25, 79),
+    'lyrics' : (12, 63),
 }
 
 
@@ -846,6 +770,119 @@ def update_album_cover():
         album_cover = downloaded_image.to_color_shape_map(60,30)
 
         display_map.add_map_array(ART_PLACES['cover_art'], album_cover.array)
+
+
+
+def get_lyrics():
+    def parse_lrc(lrc_content):
+        timestamp_pattern = re.compile(r'\[(\d+):(\d+(?:\.\d+)?)\]')
+        lyrics = []
+        for line in lrc_content.splitlines():
+            timestamps = timestamp_pattern.findall(line)
+            if timestamps:
+                lyric_text = timestamp_pattern.sub('', line).strip()
+                for minute, second in timestamps:
+                    timestamp = int(minute) * 60 + float(second)
+                    lyrics.append((timestamp, lyric_text))
+        lyrics.sort(key=lambda x: x[0])
+        return lyrics
+    
+    if current:
+        lyrics = syncedlyrics.search(f"{get_current_track_name()} {get_current_artists()}")
+        return parse_lrc(lyrics)
+    else:
+        return " "
+
+def get_current_lyrics_part(lyrics, current_time, previous_lines_count, next_lines_count):
+    current_index = -1  # Initialize to -1 to handle empty lyrics case
+
+    for i, (timestamp, line) in enumerate(lyrics):
+        if current_time < timestamp:
+            current_index = i - 1
+            break
+        current_index = i  # Update current_index in each iteration
+
+    if not lyrics:  # Handle the case where lyrics is empty
+        current_index = -1
+
+    # Calculate start and end indices, handling edge cases.
+    start_index = max(0, current_index - previous_lines_count)
+    end_index = min(len(lyrics), current_index + next_lines_count + 1)
+
+    # Extract the relevant lyrics part
+    current_lyrics_part = lyrics[start_index:end_index]
+
+    # Pad with previous lines if necessary
+    padding_needed_previous = previous_lines_count - (current_index - start_index)
+    if padding_needed_previous > 0:
+        padding_previous = [(-1, " ") for _ in range(padding_needed_previous)]
+        current_lyrics_part = padding_previous + current_lyrics_part
+
+    # Pad with next lines if necessary
+    padding_needed_next = next_lines_count - (end_index - (current_index + 1))
+    if padding_needed_next > 0:
+        padding_next = [(-1, " ") for _ in range(padding_needed_next)]
+        current_lyrics_part = current_lyrics_part + padding_next
+
+    # Extract only the text part for the return value
+    current_text = [text for _, text in current_lyrics_part]
+    return current_text
+
+def update_lyrics(lyrics, current_time, previous_lines_count=2, next_lines_count=4):
+    def get_two_rows(text, give_empty=True):
+        if len(text)<= 34:
+            if not give_empty:
+                return [text]
+            else:
+                return [text, " "]
+
+        first_row = " "
+        second_row = " "
+        for i in range(33, 0, -1):
+            if text[i] == ' ':
+                first_row = text[:i]
+                second_row = text[i+1:68]
+                break
+        
+        return [first_row, second_row]
+
+    current_part = get_current_lyrics_part(lyrics, current_time, previous_lines_count, next_lines_count)
+
+    text_rows = []
+
+    is_multiple_rows = [34< len(text) for text in current_part]
+    if is_multiple_rows[1]:
+        text_rows += get_two_rows(current_part[1])
+    elif is_multiple_rows[0]:
+        text_rows += [get_two_rows(current_part[0])[1]] + [current_part[1]]
+    else:
+        text_rows += [current_part[0], current_part[1]]
+    
+    text_rows += get_two_rows(current_part[2])
+
+    for i in range(3, len(current_part)):
+        text_rows += get_two_rows(current_part[i], give_empty=False)
+        if 7<= len(text_rows):
+            if len(text_rows) != 8:
+                text_rows += [get_two_rows(current_part[i+1])[0]]
+            break
+            
+    place_art('lyrics')
+
+    y, x = ART_PLACES['lyrics']
+    for i, text_row in enumerate(text_rows):
+        if i+1 == 3 or i +1 == 4:
+            color = f"\033[38;2;{200};{200};{200}m"
+        else:
+            color = f"\033[38;2;{150};{150};{150}m"
+        
+        chars = list(text_row)
+        if chars == [ ]: chars = ["♪"]
+        chars[0] = color + chars[0]
+        display_map.add_map_array((y, x), np.array([chars], dtype=np.object_))
+        y += 1
+        if i+1 == 2 or i+1 == 4:
+            y += 1
         
 
 def get_current_playlist_name():
@@ -919,6 +956,10 @@ def update_playing_status():
         return playing_status
 
 
+
+
+
+
 def song_view():
     global current
     display_map.fill()
@@ -931,16 +972,18 @@ def song_view():
         'next_up', 'next_up_serials', 'next_up_tracks', 'next_up_xs',
         'hour_dots', '5x4_minute_1', '5x4_minute_0', 'divider_colon', '5x4_second_1', '5x4_second_0',
         'no_shuffle', 'previous', 'resume', 'next', 'like',
+        'lyrics',
     )
     for art in arts: place_art(art)
 
 
 
-    buffer = 0.5#seconds
+    buffer = 2#seconds
     last_request_time = 0
     current_time = 0
     last_calculated_time = 0
     song_length = float('inf')
+    lyrics = ""
 
     previous_name = None
     previous_playing_status = False
@@ -953,6 +996,11 @@ def song_view():
                 current = safe_spotify_request(sp.current_playback)
 
                 if current:
+                    current_time = get_time()
+                    last_calculated_time = current_time
+
+                    last_request_time = precise_time()
+
                     playing_status = update_playing_status()
 
                     update_playlist_name()
@@ -962,32 +1010,37 @@ def song_view():
                         update_next_up_tracks()
                         song_length = get_song_length()
                         update_song_length(song_length)
+                        lyrics = get_lyrics()
                         update_track_name()
                         update_artists()
 
                     update_shuffle_status()
                     update_liked_status()
 
-                    current_time = get_time()
-                    update_time(current_time)
-
-                    add_progress_bar(current_time/song_length)
-
                     previous_name = current['item']['name']
                     previous_playing_status = playing_status
-
                 else:
                     previous_name = None
+                
             else:
                 current_time = last_calculated_time + precise_time() - last_request_time
-                update_time(current_time)
+
+            update_time(current_time)
+            
+            add_progress_bar(current_time/song_length)
+            
+            update_lyrics(lyrics, current_time)
             
             terminal_display.update(display_map)
+
+            print(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{40};{50};{50}m {round(precise_time() - last_request_time,1)}')
         
         except KeyboardInterrupt:
             sys.exit(0)
-        except:
+        except requests.exceptions.ReadTimeout:
             pass
+        except Exception as e:
+            raise e
 
 
 
@@ -998,17 +1051,15 @@ if __name__ == "__main__":
     bottom_text = ""
     GLOBAL_last_frame_time = 0
 
-    colorama.init(autoreset=True) # Initialize terminal formatting
+    colorama.init()
 
     window_width = 96
     window_height = 36
 
     os.system('cls')
 
-    terminal_display = TerminalDisplay(window_height)
+    terminal_display = TerminalDisplay(window_height+1)
 
     display_map = CharacterMap(window_width, window_height, filler=' ', U1dtype=False)
 
     song_view()
-
-    print(colorama.Style.RESET_ALL) # End terminal formatting

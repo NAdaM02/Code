@@ -185,9 +185,8 @@ class CustomImage:
     def downscale(self, target_width:int, target_height:int, method=cv2.INTER_LINEAR_EXACT):
         self.array = cv2.resize(self.array, (target_width, target_height), interpolation=method)
 
-        return self
-
     def be_screenshot(self, bbox=None):
+        sct = dxcam.create()
         self.array = np.array(sct.grab(bbox))
         return self
     
@@ -726,7 +725,6 @@ if __name__ == "__main__":
     global GLOBAL_last_frame_time, bottom_text
     bottom_text = ""
     GLOBAL_last_frame_time = 0
-    sct = dxcam.create()
 
     os.system('cls')
 
@@ -744,7 +742,7 @@ if __name__ == "__main__":
     while True:
         monitor_image = CustomImage().be_screenshot(bbox)
         display_map = monitor_image.to_color_shape_map(width, height, convert_method)
-        terminal_display.update(display_map,)
+        terminal_display.update(display_map)
         #if bottom_text != "": print(f"\n{Fore.WHITE}{bottom_text}")
     
     terminal_display.clear()
