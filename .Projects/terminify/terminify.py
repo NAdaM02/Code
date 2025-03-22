@@ -1038,7 +1038,7 @@ def song_view():
             
             terminal_display.update(display_map, 10)
 
-            print(f'\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}')
+            print(f'\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}  ')
         
         except KeyboardInterrupt:
             sys.exit(0)
