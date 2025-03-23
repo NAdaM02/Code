@@ -794,7 +794,7 @@ def get_lyrics():
         return lyrics
     
     if current:
-        lyrics = syncedlyrics.search(f"{get_current_track_name()} {get_current_artists()}",)
+        lyrics = syncedlyrics.search(f"{get_current_track_name()} {get_current_artists()}", synced_only=True)
         return parse_lrc(lyrics)
     else:
         return " "
