@@ -1045,7 +1045,7 @@ def song_view():
         except requests.exceptions.ReadTimeout:
             pass
         except Exception as e:
-            raise e
+            print(f'\r{e}')
 
 
 
