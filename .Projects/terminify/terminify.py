@@ -1047,7 +1047,7 @@ def song_view():
             
             terminal_display.update(display_map, 10)
 
-            sys.stdout.write(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}'+' '*30+'\n'+' '*36)
+            sys.stdout.write(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}'+' '*75+'\n'+' '*94)
         
         except KeyboardInterrupt:
             sys.exit(0)
@@ -1055,8 +1055,8 @@ def song_view():
             pass
         
         except Exception as e:
-            print(e)
-            wait(1)
+            print(f'\r{e}')
+            wait(2)
 
 
 
