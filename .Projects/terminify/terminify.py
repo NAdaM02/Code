@@ -1048,15 +1048,15 @@ def song_view():
             terminal_display.update(display_map, 10)
 
             sys.stdout.write(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}'+' '*75+'\n'+' '*94)
-        
+
         except KeyboardInterrupt:
             sys.exit(0)
         except requests.exceptions.ReadTimeout:
             pass
         
         except Exception as e:
-            print(f'\r{e}')
-            wait(2)
+            print(f'\r\033[38;2;{100};{55};{55}m|Error| {e}')
+            wait(2.1)
 
 
 
