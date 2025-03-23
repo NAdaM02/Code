@@ -1038,14 +1038,16 @@ def song_view():
             
             terminal_display.update(display_map, 10)
 
-            print(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}  ')
+            sys.stdout.write(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}'+' '*30+'\n'+' '*36)
         
         except KeyboardInterrupt:
             sys.exit(0)
         except requests.exceptions.ReadTimeout:
             pass
+        
         except Exception as e:
-            print(f'\r{e}')
+            print(e)
+            wait(1)
 
 
 
