@@ -1055,7 +1055,7 @@ def song_view():
             pass
         
         except Exception as e:
-            print(f'\r\033[38;2;{100};{55};{55}m|Error| {e}')
+            print(f'\r\033[38;2;{120};{55};{55}m|Error| {e}')
             wait(2.1)
 
 
