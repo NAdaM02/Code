@@ -850,15 +850,17 @@ def update_lyrics(lyrics, current_time, previous_lines_count=2, next_lines_count
             for i in range(33, 0, -1):
                 if text[i] == ' ':
                     first_row = text[:i]
-                    second_row = text[i+1:66]
-                    if 66<= len(text):
-                        second_row = second_row[:-1] + '…'
+                    second_row = text[i+1:i+34]
+                    if i+34< len(text):
+                        for j in range(i+33, i+1, -1):
+                            if text[j] == ' ':
+                                second_row = second_row[:(j-i-1)] + '…'
+                                break
                     break
             
             return [first_row, second_row]
 
         current_part = get_current_lyrics_part(lyrics, current_time, previous_lines_count, next_lines_count)
-
         text_rows = []
 
         is_multiple_rows = [33< len(text) for text in current_part]
