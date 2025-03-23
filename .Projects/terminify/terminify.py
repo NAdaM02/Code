@@ -694,10 +694,14 @@ def update_time(secs):
 
 
 def update_progress_bar(progress):
-    progress = int(progress*60+1)
+    progress = round(progress*60)
     progress_bar_string = "¤"*(progress-1) + "@" + "-"*(60-progress)
     progress_bar = list(progress_bar_string)
-    if progress != len(progress_bar): progress_bar[progress] = f"\033[38;2;{100};{100};{100}m-"
+    if progress == 0:
+        progress_bar[0] = f'@\033[38;2;{100};{100};{100}m'
+        progress_bar = progress_bar[:-1]
+    elif progress != len(progress_bar):
+        progress_bar[progress] = f"\033[38;2;{100};{100};{100}m-"
 
     display_map.add_map_array(ART_PLACES['progress_bar'], np.array([progress_bar], dtype=np.object_))
 
@@ -790,7 +794,7 @@ def get_lyrics():
         return lyrics
     
     if current:
-        lyrics = syncedlyrics.search(f"{get_current_track_name()} {get_current_artists()}")
+        lyrics = syncedlyrics.search(f"{get_current_track_name()} {get_current_artists()}",)
         return parse_lrc(lyrics)
     else:
         return " "
@@ -831,60 +835,63 @@ def get_current_lyrics_part(lyrics, current_time, previous_lines_count, next_lin
     return current_text
 
 def update_lyrics(lyrics, current_time, previous_lines_count=2, next_lines_count=4):
-    def get_two_rows(text, give_empty=True):
-        if len(text)<= 33:
-            if not give_empty:
-                return [text]
-            else:
-                return [text, " "]
-
-        first_row = " "
-        second_row = " "
-        for i in range(33, 0, -1):
-            if text[i] == ' ':
-                first_row = text[:i]
-                second_row = text[i+1:66]
-                break
-        
-        return [first_row, second_row]
-
-    current_part = get_current_lyrics_part(lyrics, current_time, previous_lines_count, next_lines_count)
-
-    text_rows = []
-
-    is_multiple_rows = [33< len(text) for text in current_part]
-    if is_multiple_rows[1]:
-        text_rows += get_two_rows(current_part[1])
-    elif is_multiple_rows[0]:
-        text_rows += [get_two_rows(current_part[0])[1]] + [current_part[1]]
-    else:
-        text_rows += [current_part[0], current_part[1]]
-    
-    text_rows += get_two_rows(current_part[2])
-
-    for i in range(3, len(current_part)):
-        text_rows += get_two_rows(current_part[i], give_empty=False)
-        if 7<= len(text_rows):
-            if len(text_rows) != 8:
-                text_rows += [get_two_rows(current_part[i+1])[0]]
-            break
-            
     place_art('lyrics')
 
-    y, x = ART_PLACES['lyrics']
-    for i, text_row in enumerate(text_rows):
-        if i+1 == 3 or i +1 == 4:
-            color = f"\033[38;2;{200};{200};{200}m"
+    if lyrics and lyrics[0] and 1< len(lyrics[0]):
+        def get_two_rows(text, give_empty=True):
+            if len(text)<= 33:
+                if not give_empty:
+                    return [text]
+                else:
+                    return [text, " "]
+
+            first_row = " "
+            second_row = " "
+            for i in range(33, 0, -1):
+                if text[i] == ' ':
+                    first_row = text[:i]
+                    second_row = text[i+1:66]
+                    if 66<= len(text):
+                        second_row = second_row[:-1] + '…'
+                    break
+            
+            return [first_row, second_row]
+
+        current_part = get_current_lyrics_part(lyrics, current_time, previous_lines_count, next_lines_count)
+
+        text_rows = []
+
+        is_multiple_rows = [33< len(text) for text in current_part]
+        if is_multiple_rows[1]:
+            text_rows += get_two_rows(current_part[1])
+        elif is_multiple_rows[0]:
+            text_rows += [get_two_rows(current_part[0])[1]] + [current_part[1]]
         else:
-            color = f"\033[38;2;{150};{150};{150}m"
+            text_rows += [current_part[0], current_part[1]]
         
-        chars = list(text_row)
-        if chars == [ ]: chars = ["♪"]
-        chars[0] = color + chars[0]
-        display_map.add_map_array((y, x), np.array([chars], dtype=np.object_))
-        y += 1
-        if i+1 == 2 or i+1 == 4:
+        text_rows += get_two_rows(current_part[2])
+
+        for i in range(3, len(current_part)):
+            text_rows += get_two_rows(current_part[i], give_empty=False)
+            if 7<= len(text_rows):
+                if len(text_rows) != 8:
+                    text_rows += [get_two_rows(current_part[i+1])[0]]
+                break
+
+        y, x = ART_PLACES['lyrics']
+        for i, text_row in enumerate(text_rows):
+            if i+1 == 3 or i +1 == 4:
+                color = f"\033[38;2;{200};{200};{200}m"
+            else:
+                color = f"\033[38;2;{150};{150};{150}m"
+            
+            chars = list(text_row)
+            if chars == [ ]: chars = ["♪"]
+            chars[0] = color + chars[0]
+            display_map.add_map_array((y, x), np.array([chars], dtype=np.object_))
             y += 1
+            if i+1 == 2 or i+1 == 4:
+                y += 1
         
 
 def get_current_playlist_name():
@@ -1027,7 +1034,7 @@ def song_view():
                     previous_name = None
                 
             else:
-                if playing_status:
+                if playing_status and current_time< song_length:
                     current_time = last_calculated_time + precise_time() - last_request_time
 
             update_time(current_time)
@@ -1065,7 +1072,7 @@ if __name__ == "__main__":
 
     os.system('cls')
 
-    terminal_display = TerminalDisplay(window_height+1)
+    terminal_display = TerminalDisplay(window_height+2)
 
     display_map = CharacterMap(window_width, window_height, filler=' ', U1dtype=False)
 
