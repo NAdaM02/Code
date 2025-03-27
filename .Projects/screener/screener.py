@@ -140,15 +140,13 @@ class TerminalDisplay:
         self.height = height
 
     def to_beginning(self):
-        stdout.write("\033[?25l")
-        stdout.write(f"\033[{self.height+2}A")
-        stdout.write("\033[2K")
+        sys.stdout.write(f"\033[{self.height+2}A\033[2K\n")
     
     def clear(self):
         os.system('cls')
     
     def write(self, display_map:CharacterMap):
-        output = "\n"+"\n".join(("".join(row) for row in display_map.array)) + Fore.WHITE
+        output = "\n".join(("".join(row) for row in display_map.array)) + Fore.WHITE
         self.to_beginning()
         stdout.write(output)
         stdout.flush()
@@ -731,6 +729,7 @@ if __name__ == "__main__":
     GLOBAL_last_frame_time = 0
 
     os.system('cls')
+    stdout.write("\033[?25l")
 
     width, height, convert_method, bbox = get_parsed_inputs()
 
@@ -754,7 +753,7 @@ if __name__ == "__main__":
             display_map = custom_image.to_color_shape_map(width, height, convert_method)
         else:
             t_size = os.get_terminal_size()
-            terminal_width, terminal_height = t_size.columns, t_size.lines-3
+            terminal_width, terminal_height = t_size.columns, t_size.lines-1-2
 
             if w != terminal_width and h != terminal_height:
                 os.system('cls')
@@ -776,4 +775,4 @@ if __name__ == "__main__":
         last_update = precise_time()
 
         terminal_display.update(display_map)
-        sys.stdout.write(f"\n\n\033[38;2;{55};{55};{55}mFPS: \033[38;2;{30};{40};{40}m{fps}{" "*(5-len(str(fps)))}{"#"*int(fps/6)}{" "*20}")
+        stdout.write(f"\n\n\033[2K\033[38;2;{55};{55};{55}mFPS: \033[38;2;{30};{40};{40}m{fps}{" "*(5-len(str(fps)))}{"#"*int(fps/6)}")
