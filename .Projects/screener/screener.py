@@ -1,4 +1,3 @@
-from time import time as time_in_seconds
 from time import perf_counter as precise_time
 from time import sleep as wait
 import colorama
@@ -10,7 +9,7 @@ from sys import stdout
 from PIL import Image
 import threading
 import argparse
-from colorama import Fore, Style
+from colorama import Fore
 from scipy.spatial.distance import cdist
 import sys
 import pywinctl
@@ -139,19 +138,17 @@ class CharacterMap:
 class TerminalDisplay:
     def __init__(self, height:int= 512):
         self.height = height
-        self.clear_height = height+2
-        self.clear_height_str = str(height+2)
 
     def to_beginning(self):
         stdout.write("\033[?25l")
-        stdout.write("\033[" + self.clear_height_str + "A")
+        stdout.write(f"\033[{self.height+2}A")
         stdout.write("\033[2K")
     
     def clear(self):
         os.system('cls')
     
     def write(self, display_map:CharacterMap):
-        output = "\n" + "\n".join((" ".join(row) for row in display_map.array)) + Fore.WHITE
+        output = "\n"+"\n".join(("".join(row) for row in display_map.array)) + Fore.WHITE
         self.to_beginning()
         stdout.write(output)
         stdout.flush()
@@ -183,11 +180,21 @@ class CustomImage:
         return self.array
 
     def downscale(self, target_width:int, target_height:int, method=cv2.INTER_LINEAR_EXACT):
-        self.array = cv2.resize(self.array, (target_width, target_height), interpolation=method)
+        if self.array.dtype == np.uint8:
+            self.array = cv2.resize(self.array, (target_width, target_height), interpolation=method)
+            return True
+        else:
+            return None
 
     def be_screenshot(self, bbox=None):
-        sct = dxcam.create()
-        self.array = np.array(sct.grab(bbox))
+        ss = None
+        while ss is None: ss = screen_capturer.grab(bbox)
+        self.array = ss
+        return self
+
+    def be_camera(self):
+        _, img = camera.read()
+        self.array = np.fliplr(img)
         return self
     
     def save_as_img(self, name:str= 'image'):
@@ -258,9 +265,8 @@ class CustomImage:
         return img_map
 
     def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, downscale_method:int= cv2.INTER_LINEAR_EXACT):
-
         self.downscale(target_width * 3, target_height * 3, downscale_method)
-
+        
         height, width, _ = self.array.shape
         grid_rows = height // 3
         grid_cols = width // 3
@@ -374,9 +380,10 @@ def get_parsed_inputs():
                 c = 1
                 if '%' in p2:
                     c = float(p2.strip('%')) / 100
+                    width, height = int(c* win.width), int(c* win.height)
                 if '%' in p3:
                     c = float(p3.strip('%')) / 100
-                width, height = int(c* win.width), int(c* win.height)
+                    width, height = int(c* win.width), int(c* win.height)
 
         else:
             print("Window not found!")
@@ -387,9 +394,6 @@ def get_parsed_inputs():
 
         if p2 != "":
             convert_method = int(p2)
-    
-    if width == None: width = 13*16
-    if height == None: height = 13*9
 
     return width, height, convert_method, bbox
 
@@ -730,21 +734,46 @@ if __name__ == "__main__":
 
     width, height, convert_method, bbox = get_parsed_inputs()
 
-    display_map = CharacterMap(width, height)
-
     terminal_display = TerminalDisplay(height)
 
 
 
     colorama.init() # Initialize terminal formatting
 
+    screen_capturer = dxcam.create()
+    camera = cv2.VideoCapture(0)
+
+    w, h = 0, 0
+    last_update = precise_time()
 
     while True:
-        monitor_image = CustomImage().be_screenshot(bbox)
-        display_map = monitor_image.to_color_shape_map(width, height, convert_method)
+        custom_image = CustomImage().be_screenshot(bbox)
+        #custom_image = CustomImage().be_camera()
+
+        if width != None:
+            display_map = custom_image.to_color_shape_map(width, height, convert_method)
+        else:
+            t_size = os.get_terminal_size()
+            terminal_width, terminal_height = t_size.columns, t_size.lines-3
+
+            if w != terminal_width and h != terminal_height:
+                os.system('cls')
+                terminal_display.height = terminal_height
+
+            img_ratio = custom_image.array.shape[0] / custom_image.array.shape[1]
+            if img_ratio<= terminal_height / terminal_width * 2:
+                w = terminal_width
+                h = int(w * img_ratio/2)
+            else:
+                h = terminal_height
+                w = int(h/img_ratio*2)
+
+            
+            display_map = custom_image.to_color_shape_map(w, h, convert_method)
+            
+
+        fps = round(1/(precise_time() - last_update))
+        last_update = precise_time()
+
         terminal_display.update(display_map)
-        #if bottom_text != "": print(f"\n{Fore.WHITE}{bottom_text}")
-    
-    terminal_display.clear()
-    
-    print(colorama.Style.RESET_ALL)  # Reset terminal formatting
+        sys.stdout.write(f"\n\n\033[38;2;{55};{55};{55}mFPS: \033[38;2;{30};{40};{40}m{fps}{" "*(5-len(str(fps)))}{"#"*int(fps/6)}{" "*20}")
