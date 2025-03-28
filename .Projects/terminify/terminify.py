@@ -257,13 +257,9 @@ class CharacterMap:
 class TerminalDisplay:
     def __init__(self, height:int= 512):
         self.height = height
-        self.clear_height = height+2
-        self.clear_height_str = str(height+2)
 
     def to_beginning(self):
-        stdout.write("\033[?25l")
-        stdout.write("\033[" + self.clear_height_str + "A")
-        stdout.write("\033[2K")
+        sys.stdout.write(f"\033[{self.height+1}A\033[2K\n")
     
     def clear(self):
         os.system('cls')
@@ -280,7 +276,7 @@ class TerminalDisplay:
         if fps == 0:
             self.write(display_map)
         else:
-            stay_seconds = int(10000/fps)/10000
+            stay_seconds = int(1000/fps)/1000
 
             self.write(display_map)
 
@@ -1006,7 +1002,7 @@ def song_view():
         try:
             if buffer< precise_time() - last_request_time:
                 
-                current = safe_spotify_request(sp.current_playback)
+                current = sp.current_playback()
 
                 if current:
                     current_time = get_time()
@@ -1073,6 +1069,7 @@ if __name__ == "__main__":
     window_height = 36
 
     os.system('cls')
+    stdout.write("\033[?25l")
 
     terminal_display = TerminalDisplay(window_height+2)
 

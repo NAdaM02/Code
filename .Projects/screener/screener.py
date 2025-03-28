@@ -140,7 +140,7 @@ class TerminalDisplay:
         self.height = height
 
     def to_beginning(self):
-        sys.stdout.write(f"\033[{self.height+2}A\033[2K\n")
+        sys.stdout.write(f"\033[{self.height+1}A\033[2K\n")
     
     def clear(self):
         os.system('cls')
@@ -157,7 +157,7 @@ class TerminalDisplay:
         if fps == 0:
             self.write(display_map)
         else:
-            stay_seconds = int(10000/fps)/10000
+            stay_seconds = int(1000/fps)/1000
 
             self.write(display_map)
 
