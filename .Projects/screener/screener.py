@@ -190,9 +190,12 @@ class CustomImage:
         self.array = ss
         return self
 
-    def be_camera(self):
+    def be_camera(self, flip_it:bool=True):
         _, img = camera.read()
-        self.array = np.fliplr(img)
+        if flip_it:
+            self.array = np.fliplr(img)
+        else:
+            self.array = img
         return self
     
     def save_as_img(self, name:str= 'image'):
@@ -740,7 +743,7 @@ if __name__ == "__main__":
     colorama.init() # Initialize terminal formatting
 
     screen_capturer = dxcam.create()
-    camera = cv2.VideoCapture(0)
+    camera = cv2.VideoCapture(1)
 
     w, h = 0, 0
     last_update = precise_time()
@@ -775,4 +778,4 @@ if __name__ == "__main__":
         last_update = precise_time()
 
         terminal_display.update(display_map)
-        stdout.write(f"\n\n\033[2K\033[38;2;{55};{55};{55}mFPS: \033[38;2;{30};{40};{40}m{fps}{" "*(5-len(str(fps)))}{"#"*int(fps/6)}")
+        stdout.write(f"\n\n\033[2K\033[38;2;{55};{55};{55}mFPS: \033[38;2;{30};{40};{40}m{fps}{" "*(5-len(str(fps)))}{"#"*int(fps/5)}")
