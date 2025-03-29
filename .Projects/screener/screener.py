@@ -140,7 +140,7 @@ class TerminalDisplay:
         self.height = height
 
     def to_beginning(self):
-        sys.stdout.write(f"\033[{self.height+1}A\033[2K\n")
+        sys.stdout.write(f"\033[{self.height+2}A\033[2K\n")
     
     def clear(self):
         os.system('cls')
@@ -743,7 +743,7 @@ if __name__ == "__main__":
     colorama.init() # Initialize terminal formatting
 
     screen_capturer = dxcam.create()
-    camera = cv2.VideoCapture(1)
+    camera = cv2.VideoCapture(0)
 
     w, h = 0, 0
     last_update = precise_time()
