@@ -4,6 +4,7 @@ import numpy as np
 from math import ceil
 from random import randrange
 from functools import reduce
+import keyboard
 
 
 def get_relative_neighbours(distance:float= 1):
@@ -192,7 +193,6 @@ def update_display(fps=0):
 
 
 
-import keyboard
 
 
 
