@@ -1,0 +1,11 @@
+[package]
+name = "screener"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+scrap = "0.5"
+image = "0.25"
+crossterm = "0.29"
+clap = { version = "4.0", features = ["derive"] }
+ndarray = "0.15"

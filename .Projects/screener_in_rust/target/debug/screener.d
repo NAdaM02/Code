@@ -1,0 +1,1 @@
+C:\Users\adama\Downloads\screener\target\debug\screener.exe: C:\Users\adama\Downloads\screener\src\character_map.rs C:\Users\adama\Downloads\screener\src\custom_image.rs C:\Users\adama\Downloads\screener\src\graph.rs C:\Users\adama\Downloads\screener\src\main.rs C:\Users\adama\Downloads\screener\src\terminal_display.rs
