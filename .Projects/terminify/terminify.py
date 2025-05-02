@@ -651,7 +651,7 @@ def adjust_time():
 
 def update_progress_bar(progress):
     progress = round(progress*60)
-    progress_bar_string = "="*(progress-1) + "@" + "-"*(60-progress)
+    progress_bar_string = "¤"*(progress-1) + "@" + "-"*(60-progress)
     progress_bar = list(progress_bar_string)
     if progress == 0:
         progress_bar[0] = f'@\033[38;2;{100};{100};{100}m'
@@ -938,7 +938,7 @@ def update_selector():
             size = (5, 5)
         else:
             size = (3, 3)
-        display_map.add_map_array((i, j), contracted_art_to_array(['#'*size[0]]*size[1]))
+        display_map.add_map_array((i, j), contracted_art_to_array([f'\033[38;2;{0};{55};{55}m#'*size[0]]*size[1]))
 
 
 
