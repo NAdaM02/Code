@@ -277,36 +277,31 @@ class Selector():
         i, j = self.position
         return self.field_values[i][j]
     
-    def call_action(self, event=None):
+    def call_action(self):
         t = precise_time()
         i, j = self.position
         self.last_interaction_time = t-3
 
         return self.field_actions[i][j]()
 
-    def move_up(self, event=None):
+    def move_up(self):
         self.move((0, 1))
 
-    def move_down(self, event=None):
+    def move_down(self):
         self.move((0, -1))
 
-    def move_left(self, event=None):
+    def move_left(self):
         self.move((-1, 0))
 
-    def move_right(self, event=None):
+    def move_right(self):
         self.move((1, 0))
 
 
 
 
-sp = spotipy.Spotify(
-    auth_manager=SpotifyOAuth(
-        client_id='67c0740055b9412da3e1e14978c42742',
-        client_secret='4116025cf230497699d6feb972d8bfc7',
-        redirect_uri='https://example.org/callback',
-        scope='user-read-playback-state user-modify-playback-state user-library-read user-library-modify'
-    )
-)
+
+
+
 
 
 
@@ -478,7 +473,7 @@ def place_art(art_name):
 
 
 
-current = None
+
 
 
 def get_shuffle_status():
@@ -551,7 +546,8 @@ def get_liked_status():
 
 def update_liked_status():
     if current:
-        liked_status = get_liked_status()
+        #liked_status = get_liked_status()
+        liked_status = False
         place_art('liked' if liked_status else 'like')
         
         return liked_status
@@ -646,11 +642,16 @@ def update_time(secs):
                                                     ['/', ' ', ' ']
                                                 ]) )
 
+def adjust_time():
+    if current:
+        sp.seek_track(1000*(current_time+5))
+
+
 
 
 def update_progress_bar(progress):
     progress = round(progress*60)
-    progress_bar_string = "¤"*(progress-1) + "@" + "-"*(60-progress)
+    progress_bar_string = "="*(progress-1) + "@" + "-"*(60-progress)
     progress_bar = list(progress_bar_string)
     if progress == 0:
         progress_bar[0] = f'@\033[38;2;{100};{100};{100}m'
@@ -916,7 +917,10 @@ def update_artists():
             
 
 
-def call_action_and_update_status(event=None):
+
+
+
+def call_action_and_update_status():
     global current
     action_selector.call_action()
     current = sp.current_playback()
@@ -927,15 +931,21 @@ def update_selector():
     if current and dt< 5 and dt-int(dt)< 0.5:
         selected = action_selector.get_val()
         i, j = ART_PLACES[selected]
-        if selected == 'shuffle' or selected == 'like':
+        if selected == "progress_bar":
+            j = j + round(progress*60)-1
+            size = (1, 1)
+        elif selected == 'shuffle' or selected == 'like':
             size = (5, 5)
         else:
             size = (3, 3)
         display_map.add_map_array((i, j), contracted_art_to_array(['#'*size[0]]*size[1]))
 
 
+
+
+
 def song_view():
-    global current
+    global current, current_time, progress
     display_map.fill()
 
     arts = (
@@ -953,8 +963,9 @@ def song_view():
 
 
     buffer = 2#seconds
-    last_request_time = 0
+    last_request_time = precise_time()-buffer-0.1
     current_time = 0
+    progress = 0
     last_calculated_time = 0
     song_length = float('inf')
     lyrics = ""
@@ -984,6 +995,7 @@ def song_view():
                         lyrics = get_lyrics()
                         update_track_name()
                         update_artists()
+                        update_liked_status()
 
                     previous_name = current['item']['name']
                 else:
@@ -995,12 +1007,12 @@ def song_view():
 
             update_time(current_time)
             
-            update_progress_bar(current_time/song_length)
+            progress = current_time/song_length
+            update_progress_bar(progress)
             
             update_lyrics(lyrics, current_time)
-
+            
             update_shuffle_status()
-            update_liked_status()
             playing_status = update_playing_status()
 
             place_art('previous'); place_art('next')
@@ -1019,9 +1031,13 @@ def song_view():
             sys.stdout.flush()
             wait(2.1)
 
-    sp.seek_track(current_position_ms)
 
 
+
+
+
+
+"""
 def search_and_play():
     try:
         query = input("\nSearch for track: ").strip()
@@ -1054,21 +1070,7 @@ def search_and_play():
 
     except Exception as e:
         print(f"Search error: {e}")
-
-# Bind keys to new functions
-
-
-
-
-
-
-
-
-
-
-
-
-
+"""
 
 
 
@@ -1092,6 +1094,16 @@ if __name__ == "__main__":
     TERMINAL_WINDOW_ID = win32gui.GetForegroundWindow()
     GLOBAL_last_frame_time = 0
 
+    sp = spotipy.Spotify(
+        auth_manager=SpotifyOAuth(
+            client_id='67c0740055b9412da3e1e14978c42742',
+            client_secret='4116025cf230497699d6feb972d8bfc7',
+            redirect_uri='https://example.org/callback',
+            scope='user-read-playback-state user-modify-playback-state user-library-read user-library-modify'
+        )
+    )
+    current = None
+
     window_width = 96
     window_height = 36
 
@@ -1100,9 +1112,9 @@ if __name__ == "__main__":
     display_map = CharacterMap(window_width, window_height, filler=' ', U1dtype=False)
 
     action_selector = Selector(
-        field_values= [['shuffle', 'previous', 'pause', 'next', 'like']],
-        field_actions= [[cycle_shuffle, previous_track, stop_resume, next_track, like_unlike_current_song]],
-        starting_position= [2, 0],
+        field_values= [['progress_bar', 'shuffle', 'previous', 'pause', 'next', 'like']],
+        field_actions= [[adjust_time, cycle_shuffle, previous_track, stop_resume, next_track, like_unlike_current_song]],
+        starting_position= [3, 0],
     )
 
     key_action_dict = {
