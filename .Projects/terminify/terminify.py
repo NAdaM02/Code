@@ -280,8 +280,8 @@ class Selector():
     def call_action(self):
         t = precise_time()
         i, j = self.position
-        self.last_interaction_time = t-3
 
+        self.last_interaction_time = t-3
         return self.field_actions[i][j]()
 
     def move_up(self):
@@ -291,10 +291,18 @@ class Selector():
         self.move((0, -1))
 
     def move_left(self):
-        self.move((-1, 0))
+        if not time_edit_mode:
+            self.move((-1, 0))
+        else:
+            adjust_time(-1)
+            self.last_interaction_time = precise_time()
 
     def move_right(self):
-        self.move((1, 0))
+        if not time_edit_mode:
+            self.move((1, 0))
+        else:
+            adjust_time(1)
+            self.last_interaction_time = precise_time()
 
 
 
@@ -473,6 +481,20 @@ def place_art(art_name):
 
 
 
+def get_preferred_device_id():
+    devices = sp.devices().get('devices', [])
+    if not devices:
+        print("No available devices found.")
+        return None
+
+    for device in devices:
+        if device.get('is_active') and not device.get('is_restricted'):
+            return device['id']
+
+    for device in devices:
+        if not device.get('is_restricted'):
+            return device['id']
+
 
 
 
@@ -544,10 +566,10 @@ def get_liked_status():
         
         return liked
 
-def update_liked_status():
+def update_liked_status(status=False):
     if current:
         #liked_status = get_liked_status()
-        liked_status = False
+        liked_status = status
         place_art('liked' if liked_status else 'like')
         
         return liked_status
@@ -642,11 +664,18 @@ def update_time(secs):
                                                     ['/', ' ', ' ']
                                                 ]) )
 
-def adjust_time():
+def adjust_time(dir=1, change=15):
+    global current_time, progress
     if current:
-        sp.seek_track(1000*(current_time+5))
+        new_time = max(0, min((current_time + dir*change), get_song_length()-0.1))
+        current_time = new_time
+        progress = new_time / song_length
+        sp.seek_track(int(new_time*1000), DEVICE_ID)
 
-
+def toggle_time_edit_mode():
+    global time_edit_mode
+    time_edit_mode = not time_edit_mode
+    return time_edit_mode
 
 
 def update_progress_bar(progress):
@@ -916,6 +945,24 @@ def update_artists():
     return artists
             
 
+def update_selector():
+    global time_edit_mode
+    if current:
+        dt = precise_time() - action_selector.last_interaction_time
+        if dt>5:
+            time_edit_mode = False
+        elif dt< 5 or time_edit_mode:
+            if dt-int(dt)< 0.5 :
+                selected = action_selector.get_val()
+                i, j = ART_PLACES[selected]
+                if selected == "progress_bar":
+                    j = j + round(progress*60)-1
+                    size = (1, 1)
+                elif selected == 'shuffle' or selected == 'like':
+                    size = (5, 5)
+                else:
+                    size = (3, 3)
+                display_map.add_map_array((i, j), contracted_art_to_array([f'#'*size[0]]*size[1]))
 
 
 
@@ -926,26 +973,11 @@ def call_action_and_update_status():
     current = sp.current_playback()
 
 
-def update_selector():
-    dt = precise_time() - action_selector.last_interaction_time
-    if current and dt< 5 and dt-int(dt)< 0.5:
-        selected = action_selector.get_val()
-        i, j = ART_PLACES[selected]
-        if selected == "progress_bar":
-            j = j + round(progress*60)-1
-            size = (1, 1)
-        elif selected == 'shuffle' or selected == 'like':
-            size = (5, 5)
-        else:
-            size = (3, 3)
-        display_map.add_map_array((i, j), contracted_art_to_array([f'#'*size[0]]*size[1]))
-
-
 
 
 
 def song_view():
-    global current, current_time, progress
+    global current, current_time, song_length, progress
     display_map.fill()
 
     arts = (
@@ -963,14 +995,14 @@ def song_view():
 
 
     buffer = 2#seconds
-    last_request_time = precise_time()-buffer-0.1
+    
     current_time = 0
-    progress = 0
-    last_calculated_time = 0
     song_length = float('inf')
+    progress = 0
+    last_request_time = precise_time()-buffer-0.1
+    last_calculated_time = 0
     lyrics = ""
     playing_status = False
-
     previous_name = None
 
     terminal_display.update(display_map)
@@ -995,7 +1027,8 @@ def song_view():
                         lyrics = get_lyrics()
                         update_track_name()
                         update_artists()
-                        update_liked_status()
+                        #liked_status = get_liked_status()
+                        liked_status = False
 
                     previous_name = current['item']['name']
                 else:
@@ -1015,12 +1048,16 @@ def song_view():
             update_shuffle_status()
             playing_status = update_playing_status()
 
+            update_liked_status(liked_status)
+
             place_art('previous'); place_art('next')
             update_selector()
 
             terminal_display.update(display_map, 12)
             sys.stdout.write(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}'+' '*75)
-            
+
+
+
         except KeyboardInterrupt:
             sys.exit(0)
         except requests.exceptions.ReadTimeout:
@@ -1091,9 +1128,6 @@ def on_press(key):
 
 
 if __name__ == "__main__":
-    TERMINAL_WINDOW_ID = win32gui.GetForegroundWindow()
-    GLOBAL_last_frame_time = 0
-
     sp = spotipy.Spotify(
         auth_manager=SpotifyOAuth(
             client_id='67c0740055b9412da3e1e14978c42742',
@@ -1102,8 +1136,14 @@ if __name__ == "__main__":
             scope='user-read-playback-state user-modify-playback-state user-library-read user-library-modify'
         )
     )
-    current = None
 
+    TERMINAL_WINDOW_ID = win32gui.GetForegroundWindow()
+    DEVICE_ID = get_preferred_device_id()
+    GLOBAL_last_frame_time = 0
+    current = None
+    time_edit_mode = False
+
+    
     window_width = 96
     window_height = 36
 
@@ -1113,7 +1153,7 @@ if __name__ == "__main__":
 
     action_selector = Selector(
         field_values= [['progress_bar', 'shuffle', 'previous', 'pause', 'next', 'like']],
-        field_actions= [[adjust_time, cycle_shuffle, previous_track, stop_resume, next_track, like_unlike_current_song]],
+        field_actions= [[toggle_time_edit_mode, cycle_shuffle, previous_track, stop_resume, next_track, like_unlike_current_song]],
         starting_position= [3, 0],
     )
 
