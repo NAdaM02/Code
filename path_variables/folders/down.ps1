@@ -1,2 +1,2 @@
-Set-Location "$env:USERPROFILE\Downloads"
+Set-Location "$env:USERPROFILE\Downloads\$args"
 Write-Host ""

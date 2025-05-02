@@ -1,2 +1,2 @@
-Set-Location "$env:USERPROFILE\Iskola" 
+Set-Location "$env:USERPROFILE\Iskola\$args" 
 Write-Host "" 

@@ -25,7 +25,10 @@ import sys
 import logging
 logging.getLogger().setLevel(logging.ERROR)
 
-import keyboard
+from pynput import keyboard
+from pynput.keyboard import Key
+
+import win32gui, win32process
 
 
 TIME_CONVERT_LIST = (29030400, 604800, 86400, 3600, 60, 1)
@@ -175,7 +178,7 @@ class TerminalDisplay:
         os.system('cls')
     
     def write(self, display_map:CharacterMap):
-        output = "\n" + "\n".join(("".join(row) for row in display_map.array)) + Fore.WHITE
+        output = "\n".join(("".join(row) for row in display_map.array)) + Fore.WHITE
         self.to_beginning()
         stdout.write(output)
         stdout.flush()
@@ -246,13 +249,14 @@ class CustomImage:
 
 
 class Selector():
-    def __init__(self, field_values:tuple[tuple[int, ...], ...], starting_position:tuple[int, int]=[0, 0]):
-        """
-        restricted zones : -1
-        """
+    def __init__(self, field_values:tuple[tuple[int, ...], ...], field_actions:tuple[tuple[any, ...], ...]= None, starting_position:tuple[int, int]=[0, 0]):
+        """restricted zones : -1"""
         self.field_values = field_values
-        self.position = starting_position
+        x, y = starting_position
+        i, j = len(field_values)-y-1, x
+        self.position = [i, j]
         self.last_interaction_time = 0
+        self.field_actions = field_actions
 
     def move(self, direction:tuple[int, int]):
         i, j = self.position
@@ -272,17 +276,24 @@ class Selector():
     def get_val(self):
         i, j = self.position
         return self.field_values[i][j]
+    
+    def call_action(self, event=None):
+        t = precise_time()
+        i, j = self.position
+        self.last_interaction_time = t-3
 
-    def move_up(self, event):
+        return self.field_actions[i][j]()
+
+    def move_up(self, event=None):
         self.move((0, 1))
 
-    def move_down(self, event):
+    def move_down(self, event=None):
         self.move((0, -1))
 
-    def move_left(self, event):
+    def move_left(self, event=None):
         self.move((-1, 0))
 
-    def move_right(self, event):
+    def move_right(self, event=None):
         self.move((1, 0))
 
 
@@ -292,7 +303,7 @@ sp = spotipy.Spotify(
     auth_manager=SpotifyOAuth(
         client_id='67c0740055b9412da3e1e14978c42742',
         client_secret='4116025cf230497699d6feb972d8bfc7',
-        redirect_uri='http://localhost:8080',
+        redirect_uri='https://example.org/callback',
         scope='user-read-playback-state user-modify-playback-state user-library-read user-library-modify'
     )
 )
@@ -427,6 +438,7 @@ for key in ART_ARRAYS.keys():
     ART_ARRAYS[key] = contracted_art_to_array(ART_ARRAYS[key])
 
 ART_PLACES = {
+                    # row, col [0<=, 0<=]
     'no_shuffle'     : (33, 66),
     'shuffle'        : (33, 66),
     'smart_shuffle'  : (33, 66),
@@ -493,17 +505,22 @@ def cycle_shuffle():
 
         if current_shuffle_status == 'no_shuffle':
             sp.shuffle(True)
-
-        elif current_shuffle_status == 'shuffle':
-            sp.shuffle(True, smart_shuffle=True)
-
         else:
             sp.shuffle(False)
+        
+        update_shuffle_status()
 
 
 def get_playing_status():
     if current:
         return current['is_playing']
+
+def update_playing_status():
+    if current:
+        playing_status = get_playing_status()
+        place_art('pause' if playing_status else 'resume')
+        
+        return playing_status
 
 def stop_resume():
     if current:
@@ -512,9 +529,14 @@ def stop_resume():
         else:
             sp.start_playback()
 
+        update_playing_status()
+
 
 def previous_track():
-    sp.previous_track()
+    try:
+        sp.previous_track()
+    except:
+        pass
 
 def next_track():
     sp.next_track()
@@ -542,6 +564,8 @@ def like_unlike_current_song():
             sp.current_user_saved_tracks_delete([track_id])
         else:
             sp.current_user_saved_tracks_add([track_id])
+        
+        update_liked_status()
 
 
 def get_song_length():
@@ -580,8 +604,6 @@ def update_song_length(secs):
                 minute_1_art = ART_ARRAYS[f'{units[2]}-5x4']
                 display_map.add_map_array(ART_PLACES['5x4_minute_1'], minute_1_art)
             display_map.add_map_array(ART_PLACES['5x4_minute_0'], minute_0_art)
-
-        terminal_display.update(display_map)
 
 
 def get_time():
@@ -623,8 +645,7 @@ def update_time(secs):
                                                     [' ', '/', ' '],
                                                     ['/', ' ', ' ']
                                                 ]) )
-        
-        terminal_display.update(display_map)
+
 
 
 def update_progress_bar(progress):
@@ -894,12 +915,11 @@ def update_artists():
     return artists
             
 
-def update_playing_status():
-    if current:
-        playing_status = get_playing_status()
-        place_art('pause' if playing_status else 'resume')
-        
-        return playing_status
+
+def call_action_and_update_status(event=None):
+    global current
+    action_selector.call_action()
+    current = sp.current_playback()
 
 
 def update_selector():
@@ -942,11 +962,10 @@ def song_view():
 
     previous_name = None
 
-
+    terminal_display.update(display_map)
     while True:
         try:
             if buffer< precise_time() - last_request_time:
-                
                 current = sp.current_playback()
 
                 if current:
@@ -956,7 +975,7 @@ def song_view():
                     last_request_time = precise_time()
 
                     update_playlist_name()
-
+                    
                     if current['item'] and previous_name != current['item']['name']:
                         update_album_cover()
                         update_next_up_tracks()
@@ -972,7 +991,7 @@ def song_view():
                 
             else:
                 if playing_status and current_time< song_length:
-                    current_time = last_calculated_time + precise_time() - last_request_time
+                    current_time = last_calculated_time + precise_time()-last_request_time
 
             update_time(current_time)
             
@@ -986,26 +1005,91 @@ def song_view():
 
             place_art('previous'); place_art('next')
             update_selector()
+
+            terminal_display.update(display_map, 12)
+            sys.stdout.write(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}'+' '*75)
             
-            terminal_display.update(display_map, 10)
-
-            sys.stdout.write(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {round(precise_time() - last_request_time,1)}'+' '*75+'\n'+' '*94)
-
         except KeyboardInterrupt:
             sys.exit(0)
         except requests.exceptions.ReadTimeout:
             pass
         
         except Exception as e:
-            print(f'\r\033[38;2;{120};{55};{55}m|Error| {e}')
+            sys.stdout.write(73*f'\b'+f'\033[38;2;{120};{55};{55}m|Error| {e}')
+            sys.stdout.flush()
             wait(2.1)
 
+    sp.seek_track(current_position_ms)
 
+
+def search_and_play():
+    try:
+        query = input("\nSearch for track: ").strip()
+        if not query:
+            return
+
+        results = sp.search(q=query, type='track', limit=5)
+        tracks = results['tracks']['items']
+        if not tracks:
+            print("No results.")
+            return
+
+        print("\nSearch results:")
+        for i, item in enumerate(tracks, start=1):
+            name = item['name']
+            artists = ", ".join(a['name'] for a in item['artists'])
+            print(f"  {i}. {name} – {artists}")
+
+        choice = input("Choose track (1-5): ").strip()
+        if not choice.isdigit():
+            return
+
+        index = int(choice) - 1
+        if index < 0 or index >= len(tracks):
+            return
+
+        track_uri = tracks[index]['uri']
+        sp.start_playback(uris=[track_uri])
+        print(f"\nNow playing: {tracks[index]['name']}")
+
+    except Exception as e:
+        print(f"Search error: {e}")
+
+# Bind keys to new functions
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def on_press(key):
+    try:
+        if win32gui.GetForegroundWindow() == TERMINAL_WINDOW_ID :
+            try:          
+                key_action_dict[key.char]()
+            except:
+                key_action_dict[key]()
+    except:
+        pass
 
 
 if __name__ == "__main__":
-    global GLOBAL_last_frame_time, bottom_text
-    bottom_text = ""
+    TERMINAL_WINDOW_ID = win32gui.GetForegroundWindow()
     GLOBAL_last_frame_time = 0
 
     window_width = 96
@@ -1015,18 +1099,26 @@ if __name__ == "__main__":
 
     display_map = CharacterMap(window_width, window_height, filler=' ', U1dtype=False)
 
-    action_selector = Selector([
-                                ['shuffle', 'previous', 'pause', 'next', 'like'],
-                            ])
+    action_selector = Selector(
+        field_values= [['shuffle', 'previous', 'pause', 'next', 'like']],
+        field_actions= [[cycle_shuffle, previous_track, stop_resume, next_track, like_unlike_current_song]],
+        starting_position= [2, 0],
+    )
+
+    key_action_dict = {
+        'w' : action_selector.move_up,     Key.up : action_selector.move_up,
+        's' : action_selector.move_down,   Key.down : action_selector.move_down,
+        'a' : action_selector.move_left,   Key.left : action_selector.move_left,
+        'd' : action_selector.move_right,  Key.right : action_selector.move_right,
+        Key.space : call_action_and_update_status,
+    }
+
+    listener = keyboard.Listener(on_press=on_press)
+    listener.start()
 
     colorama.init()
 
     os.system('cls')
     stdout.write("\033[?25l")
 
-    #keyboard.on_press_key('w', action_selector.move_up)
-    #keyboard.on_press_key('a', action_selector.move_left)
-    #keyboard.on_press_key('s', action_selector.move_down)
-    #keyboard.on_press_key('d', action_selector.move_right)
-    #keyboard.on_press_key('space', )
     song_view()

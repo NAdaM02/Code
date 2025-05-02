@@ -1,2 +1,2 @@
-Set-Location "$env:USERPROFILE\Code"
+Set-Location "$env:USERPROFILE\Code\$args"
 Write-Host ""

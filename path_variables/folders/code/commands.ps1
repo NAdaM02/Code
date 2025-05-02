@@ -1,2 +1,2 @@
-Set-Location "$env:USERPROFILE\Code\path_variables\commands"
+Set-Location "$env:USERPROFILE\Code\path_variables\commands\$args"
 Write-Host ""
