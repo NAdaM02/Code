@@ -938,7 +938,7 @@ def update_selector():
             size = (5, 5)
         else:
             size = (3, 3)
-        display_map.add_map_array((i, j), contracted_art_to_array([f'\033[38;2;{0};{55};{55}m#'*size[0]]*size[1]))
+        display_map.add_map_array((i, j), contracted_art_to_array([f'#'*size[0]]*size[1]))
 
 
 
