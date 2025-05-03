@@ -31,294 +31,6 @@ import psutil
 
 
 
-
-def globals():
-    global globalize_screener_values
-    global globalize_time_convert_values
-    global globalize_ART_values
-    global globalize_spotify_values
-    global globalize_key_action_dict
-    global globalize_action_selector
-
-
-    def globalize_screener_values():
-        global DOT, OPAS, THRESHOLDS, CHAR_WIDTH_PER_HEIGHT, CHARACTER_SHAPES
-        global window_width, window_height, terminal_display, display_map, GLOBAL_last_frame_time
-
-        DOT = (os.path.dirname(__file__)).replace('\\','/')
-
-        OPAS = tuple(" .`':,_-;^!<+>=/*?|vLclTxY()r1iz{}tnsJjfCuo7FI][e3aVX2yZShk4AUPw5bqK96dEmpHG%O#D80R&gN$BMQW@")
-
-        THRESHOLDS = (19.92, 36.93, 39.75, 39.84, 42.89, 53.66, 54.4, 62.83, 69.53, 74.17, 105.29, 106.47, 108.4, 109.08, 111.08, 116.27, 117.73, 123.66, 125.45, 125.71, 128.68, 130.03, 131.86, 132.5, 135.4, 137.24, 137.5, 142.01, 142.56, 142.75, 143.7, 146.49, 146.71, 147.49, 148.18, 149.43, 149.48, 153.02, 153.36, 155.5, 156.51, 157.07, 157.39, 157.42, 157.54, 157.6, 157.9, 162.86, 163.27, 165.91, 166.07, 167.35, 167.53, 169.5, 170.98, 172.68, 174.85, 181.89, 182.69, 185.28, 185.88, 186.98, 188.07, 188.71, 194.11, 194.94, 195.06, 195.96, 196.18, 196.41, 196.81, 197.21, 197.27, 198.77, 200.79, 203.01, 204.88, 210.01, 212.57, 215.11, 218.92, 219.69, 221.34, 223.96, 232.33, 232.41, 232.83, 233.37, 240.17, 243.34, 255.0)
-
-        CHAR_WIDTH_PER_HEIGHT = 117/232
-
-        CHARACTER_SHAPES = (((9.2, 246.45, 0.36), (0.0, 15.92, 1.84), (0.0, 0.0, 0.0)),((0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 146.16, 0.0)),((0.0, 0.0, 0.0), (121.82, 161.49, 122.78), (0.0, 0.0, 0.0)),((0.0, 151.87, 0.0), (0.0, 143.26, 0.0), (0.0, 0.0, 0.0)),((0.0, 0.0, 0.0), (0.0, 148.64, 0.0), (0.0, 145.96, 0.0)),((0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (118.91, 157.64, 119.83)),((0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 314.2, 0.0)),((12.7, 224.55, 13.54), (82.08, 97.76, 83.54), (0.0, 0.0, 0.0)),((0.0, 0.0, 0.0), (243.37, 322.61, 245.28), (0.0, 0.0, 0.0)),((0.0, 0.0, 0.0), (0.0, 148.52, 0.0), (0.0, 314.19, 0.0)),((26.35, 0.0, 0.0), (183.28, 355.89, 212.25), (28.8, 0.0, 0.0)),((0.0, 0.0, 26.04), (205.27, 339.49, 181.82), (0.0, 0.0, 28.37)),((0.0, 56.04, 0.0), (121.94, 434.58, 122.89), (0.0, 58.25, 0.0)),((0.0, 142.66, 0.0), (0.0, 259.75, 0.0), (0.0, 146.03, 0.0)),((0.0, 0.0, 0.0), (213.4, 294.99, 205.79), (149.89, 189.54, 0.0)),((0.0, 0.0, 0.0), (292.51, 176.27, 127.7), (87.63, 177.65, 94.9)),((0.0, 32.66, 0.0), (181.48, 448.31, 183.35), (7.17, 1.02, 7.29)),((0.0, 27.57, 205.16), (8.76, 325.21, 27.76), (174.45, 56.14, 0.0)),((0.0, 0.0, 0.0), (114.68, 388.89, 146.66), (142.24, 180.73, 95.6)),((115.79, 178.18, 99.57), (1.81, 223.96, 111.66), (0.0, 146.75, 0.0)),((0.0, 0.0, 0.0), (200.64, 340.5, 187.72), (97.49, 164.93, 120.92)),((141.99, 0.0, 0.0), (354.36, 0.0, 0.0), (153.27, 161.6, 122.99)),((132.08, 219.56, 133.17), (0.0, 354.87, 0.0), (0.0, 141.04, 0.0)),((0.0, 0.0, 0.0), (271.61, 143.52, 273.5), (9.09, 230.46, 9.73)),((79.32, 230.21, 22.77), (0.0, 157.31, 203.41), (78.39, 228.11, 22.13)),((0.0, 127.84, 164.43), (73.54, 0.0, 354.94), (126.97, 163.48, 101.78)),((175.23, 164.46, 194.53), (85.01, 198.7, 190.97), (0.0, 154.96, 0.0)),((21.78, 229.87, 80.33), (199.77, 160.49, 0.0), (21.13, 227.67, 79.27)),((0.0, 282.01, 0.0), (0.0, 355.97, 0.0), (0.0, 280.77, 0.0)),((146.51, 164.26, 133.25), (359.35, 164.61, 59.0), (141.14, 0.0, 0.0)),((0.0, 146.15, 2.28), (73.62, 406.6, 0.0), (95.34, 216.23, 120.51)),((0.0, 252.76, 69.87), (57.29, 386.48, 0.0), (0.0, 253.06, 68.84)),((81.12, 175.41, 138.92), (378.41, 0.32, 0.0), (85.75, 176.77, 116.29)),((69.11, 253.45, 0.0), (0.0, 385.16, 58.54), (68.13, 254.27, 0.0)),((0.0, 200.11, 129.53), (135.12, 434.79, 101.69), (0.0, 143.14, 0.0)),((96.0, 219.73, 96.76), (0.0, 355.92, 0.0), (94.45, 217.33, 95.2)),((106.64, 172.18, 108.33), (9.62, 195.48, 256.12), (97.52, 166.19, 102.68)),((92.58, 197.85, 0.0), (0.35, 356.42, 0.0), (93.74, 217.35, 103.29)),((38.02, 88.53, 0.0), (216.0, 353.96, 94.49), (14.83, 195.76, 105.72)),((122.97, 184.7, 0.0), (0.0, 358.25, 0.0), (0.0, 188.76, 106.37)),((0.0, 0.0, 0.0), (338.91, 17.49, 324.65), (127.21, 149.57, 196.44)),((32.98, 295.25, 82.78), (49.03, 306.97, 0.0), (32.68, 292.54, 81.89)),((0.0, 0.0, 0.0), (343.76, 165.91, 310.29), (143.55, 0.0, 143.57)),((0.0, 0.0, 0.0), (314.37, 314.31, 251.41), (93.04, 170.07, 77.21)),((0.0, 0.0, 0.0), (304.73, 183.13, 306.3), (99.62, 180.66, 100.99)),((103.5, 171.6, 159.64), (48.24, 301.93, 49.94), (156.44, 169.05, 110.64)),((112.57, 174.22, 83.44), (196.95, 177.83, 256.37), (115.6, 166.08, 121.97)),((147.31, 0.0, 147.42), (93.71, 381.18, 95.15), (0.0, 141.12, 0.0)),((0.0, 0.0, 0.0), (135.04, 396.15, 133.46), (116.57, 84.51, 118.12)),((0.0, 98.22, 50.01), (55.67, 306.91, 143.23), (91.83, 302.23, 91.82)),((0.0, 0.0, 0.0), (273.07, 125.44, 284.62), (144.45, 404.74, 22.51)),((0.0, 0.0, 0.0), (194.09, 337.25, 222.76), (149.58, 140.1, 189.13)),((81.81, 293.91, 34.7), (0.0, 303.85, 51.62), (80.93, 291.21, 34.41)),((118.18, 173.61, 93.31), (8.13, 190.84, 203.74), (152.24, 194.2, 113.1)),((154.63, 164.26, 125.01), (366.98, 164.06, 50.48), (153.27, 161.6, 122.99)),((105.71, 169.41, 99.07), (150.37, 206.65, 162.71), (112.26, 161.5, 116.47)),((0.0, 0.0, 0.0), (308.6, 378.47, 313.41), (141.74, 125.78, 126.02)),((0.0, 0.0, 0.0), (322.79, 152.33, 342.28), (128.18, 147.14, 356.14)),((182.44, 0.0, 0.0), (373.49, 229.74, 249.68), (144.42, 21.11, 154.15)),((154.46, 166.4, 122.55), (366.9, 166.5, 280.66), (140.83, 0.0, 0.0)),((23.41, 172.31, 73.27), (367.11, 170.75, 252.47), (114.58, 168.11, 119.82)),((181.15, 0.0, 0.0), (367.78, 158.5, 310.16), (143.41, 0.0, 143.43)),((107.51, 169.68, 114.2), (254.76, 164.63, 376.95), (67.45, 175.64, 32.23)),((0.0, 0.0, 181.11), (324.52, 154.12, 371.54), (130.12, 152.26, 147.31)),((75.2, 49.24, 127.68), (392.08, 199.3, 372.6), (0.0, 14.04, 126.64)),((144.75, 0.0, 144.76), (250.69, 187.88, 252.93), (7.61, 235.89, 8.32)),((0.0, 0.0, 0.0), (347.85, 156.83, 325.68), (356.24, 151.9, 131.24)),((109.78, 172.04, 110.76), (368.24, 0.0, 368.43), (111.88, 169.2, 112.93)),((93.57, 171.62, 129.89), (376.59, 78.91, 207.66), (100.52, 170.6, 164.61)),((181.18, 0.0, 0.0), (368.5, 158.05, 325.87), (157.32, 160.45, 86.76)),((141.69, 0.0, 142.43), (354.15, 0.0, 354.38), (111.19, 173.1, 110.41)),((5.01, 231.47, 5.43), (250.13, 353.43, 253.17), (140.3, 0.0, 140.31)),((141.81, 0.0, 140.58), (371.32, 265.92, 219.42), (140.65, 4.14, 158.88)),((142.54, 20.09, 142.93), (70.82, 487.91, 72.8), (139.75, 22.52, 140.57)),((141.69, 0.0, 142.67), (374.8, 165.53, 377.36), (140.54, 0.0, 141.51)),((0.0, 0.0, 0.0), (354.73, 349.75, 361.41), (143.43, 123.06, 144.87)),((114.89, 171.66, 115.88), (295.98, 197.49, 297.37), (124.01, 164.45, 124.79)),((162.54, 167.11, 119.27), (374.66, 217.61, 295.9), (140.54, 5.33, 154.13)),((162.47, 174.0, 88.41), (353.62, 0.0, 372.21), (161.19, 170.41, 93.56)),((40.13, 96.11, 105.08), (322.6, 428.49, 326.77), (102.71, 95.09, 41.22)),((105.75, 303.86, 99.35), (150.37, 372.58, 162.73), (112.63, 296.14, 116.84)),((154.46, 170.67, 100.67), (366.9, 173.03, 305.02), (153.26, 163.47, 149.51)),((0.0, 0.0, 0.0), (324.65, 157.1, 347.19), (223.11, 329.87, 284.65)),((93.8, 179.68, 95.14), (366.59, 156.06, 365.96), (95.96, 176.56, 97.18)),((179.7, 105.66, 180.87), (342.96, 300.89, 345.29), (134.8, 0.0, 135.57)),((170.54, 51.81, 142.24), (360.13, 280.92, 359.05), (141.51, 50.96, 170.1)),((141.61, 0.0, 141.61), (337.71, 403.03, 337.82), (147.39, 146.33, 148.77)),((109.78, 172.04, 110.76), (368.32, 0.0, 368.25), (111.99, 347.85, 200.46)),((154.52, 132.67, 0.0), (259.87, 410.84, 270.21), (0.43, 123.8, 162.2)),((85.36, 187.22, 89.1), (315.45, 268.92, 200.51), (157.23, 176.94, 171.74)),((82.65, 165.65, 105.93), (292.41, 372.71, 342.46), (164.06, 263.04, 109.96)),)
-        
-
-        window_width = 96
-        window_height = 36
-
-        terminal_display = TerminalDisplay(window_height+2)
-
-        display_map = CharacterMap(window_width, window_height, filler=' ', U1dtype=False)
-
-        GLOBAL_last_frame_time = 0
-
-    def globalize_time_convert_values():
-        global TIME_CONVERT_LIST, TIME_CHAR_LIST
-
-        TIME_CONVERT_LIST = (29030400, 604800, 86400, 3600, 60, 1)
-        TIME_CHAR_LIST = ('y', 'w', 'd', 'h', 'm', 's')
-
-    def globalize_ART_values():
-        global ART_ARRAYS, ART_PLACES
-        ART_ARRAYS = {  # Thanks to Guih48 for the 5x4 number art!
-            '0-3x3' : (".o.", "| |", "'0'"),
-            '1-3x3' : (".~1", "  |", "  |"),
-            '2-3x3' : ("˛=,", " ,I", "2__"),
-            '3-3x3' : ("˙`\\", " *3", ".˛/"),
-            '4-3x3' : ("/  ", "4+*", " | "),
-            '5-3x3' : ("_~~", "5o.", "--/"),
-            '6-3x3' : ("˛o.", "6*.", "˙o˙"),
-            '7-3x3' : ("\"\"7", " / ", "*  "),
-            '8-3x3' : (",o,", ",8,", "˙o˙"),
-            '9-3x3' : (".o,", "´~9", " / "),
-
-            #'0-5x4' :  (" /¯\\ ", "|   |", "|   |", " \\_/ "),  #["  ╷ ", "╶─┤ ", "  │ ", "  │ ", "  │ "],
-            #'1-5x4' :  ("  |  ", " /|  ", "  |  ", "  |  "),    #["╭──╮", "╵  │", "╭──╯", "│   ", "└──┘"],
-            #'2-5x4' :  (" /¯\\ ", "   / ", "  /  ", " /___"),   #["╭──╮", "╵  │", " ╶─┤", "╷  │", "╰──╯"],
-            #'3-5x4' :  (" /¯\\ ", "   / ", "  -< ", " \\_/ "),  #["╭   ", "│ ╷ ", "└─┼╴", "  │ ", "  │ "],
-            #'4-5x4' :  ("   | ", "  /| ", " /¯|_", "   | "),    #["┌──╴", "│   ", "└──╮", "   │", "╰──╯"],
-            #'5-5x4' :  (" /¯¯ ", "|__  ", "   \\ ", " \\_/ "),  #["╭──╮", "│  ╵", "├──╮", "│  │", "╰──╯"],
-            #'6-5x4' :  (" /¯¯ ", "|__  ", "|  \\ ", " \\_/ "),  #["┌──┐", "╵  │", "  ╭╯", "  │ ", "  │ "],
-            #'7-5x4' :  ("¯¯/¯ ", "  /  ", " /   ", "/    "),    #["╭──╮", "│  │", "├──┤", "│  │", "╰──╯"],
-            #'8-5x4' :  (" /¯\\ ", "|_ _|", "|   |", " \\_/ "),  #["╭──╮", "│  │", "╰──┤", "╷  │", "╰──╯"],
-            #'9-5x4' :  (" /¯\\ ", "|   |", " \\__|", "  ¯/ "),  #["╭──╮", "│ /│", "│  │", "│/ │", "╰──╯"],
-
-            '0-5x4' :  
-            (",:-:,",
-            ";   ;",
-            ";   ;",
-            "':_:'"),
-
-            '1-5x4' :  
-            ("  ,1 ", 
-            " / | ", 
-            "   | ", 
-            "   | "),
-
-            '2-5x4' :  
-            (" .-~,", 
-            "    '", 
-            "  ,˝ ", 
-            " /___"),
-
-            '3-5x4' :  
-            (" ,~, ", 
-            "   / ", 
-            "  ˝\\ ", 
-            " \\_/ "),
-
-            '4-5x4' :  
-            ("  /  ", 
-            " / , ", 
-            "/__4_", 
-            "   | "),
-
-            '5-5x4' :  
-            (" ,---", 
-            " \\__ ", 
-            "    \\", 
-            " \\__/"),
-
-            '6-5x4' :  
-            (" ,~- ", 
-            "í    ", 
-            "|¨˝\\ ", 
-            "'__/ "),
-
-            '7-5x4' :  
-            (" --~;", 
-            "   / ", 
-            "  /  ", 
-            " /   "),
-            
-            '8-5x4' :  
-            (" /~\\ ", 
-            " \\_/ ", 
-            " / \\ ", 
-            " \\_/ "),
-
-            '9-5x4' :  
-            (" ,--,", 
-            " {  |", 
-            "  '*}", 
-            " ._/ "),
-
-            'previous' : (" .-", "<:|", " ˙-"),
-            'pause' :    ("¤ ¤", "O O", "¤ ¤"),
-            'resume' :   ("¤. ", "O]>", "¤˙ "),
-            'next' :     ("-. ", "|:>", "-˙ "),
-            'no_shuffle' :    (".¸ ˛.", "  =  ", "˙´ `˙"),
-            'shuffle' :       ("~¸ ˛>", "  ¤  ", "~´ `>"),
-            'smart_shuffle' : ("@¸ ˛>", "  ¤  ", "~´ `>"),
-            'like' :  (",-.-,", "', ,'", "  `  "),
-            'liked' : (",=_=,", "\\"+"%"+"X%/", " ˇ÷ˇ "),
-            'cover_art' : [". "*30]*30,
-            'progress_bar' : [" "*60],
-            'next_up' : ["NEXT UP"],
-            'next_up_serials' : [f"{i+1}." for i in range(9)],
-            'next_up_tracks' : [" "*27]*9,
-            'next_up_xs' : ["×"]*9,
-            'playing_from' : ["Playing from:"],
-            'playlist' : [" "*47],
-            'artists' : [" "*60],
-            'track_name' : [" "*59],
-            '3x3_line' : [" "*29]*3,
-            'last_3x3' : [" "*3]*3,
-            'hour_dots' : [" "]*4,
-            '5x4_second_0' : [" "*5]*4,
-            '5x4_second_1' : [" "*5]*4,
-            '5x4_minute_0' : [" "*5]*4,
-            '5x4_minute_1' : [" "*5]*4,
-            'divider_colon' : ("¤", "¤"),
-            'lyrics' : [" "*33]*2 + ["."*33] + [" "*33]*2 + ["˙"*33] + [" "*33]*4,
-        }
-        for key in ART_ARRAYS.keys():
-            ART_ARRAYS[key] = contracted_art_to_array(ART_ARRAYS[key])
-
-        ART_PLACES = {
-                            # row, col [0<=, 0<=]
-            'no_shuffle'     : (33, 66),
-            'shuffle'        : (33, 66),
-            'smart_shuffle'  : (33, 66),
-            'previous'      : (33, 73),
-            'pause'          : (33, 78),
-            'resume'         : (33, 78),
-            'next'          : (33, 83),
-            'like'           : (33, 88),
-            'liked'          : (33, 88),
-            'cover_art' : (2, 2),
-            'progress_bar' : (32, 2),
-            'next_up'         : (1,63),
-            'next_up_serials' : (2, 63),
-            'next_up_tracks'  : (2, 66),
-            'next_up_xs'      : (2, 95),
-            'playing_from' : (0, 1),
-            'playlist' : (0, 15),
-            'artists'  : (33, 2),
-            'track_name' : (34, 3),
-            '3x3_line' : (29, 64),
-            'last_3x3' : (29, 90),
-            'hour_dots' : (24, 63),
-            '5x4_second_0' : (24, 88),
-            '5x4_second_1' : (24, 81),
-            '5x4_minute_0' : (24, 73),
-            '5x4_minute_1' : (24, 66),
-            'divider_colon' : (25, 79),
-            'lyrics' : (12, 63),
-        }
-
-    def globalize_spotify_values():
-        global sp, current, buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status
-        sp = spotipy.Spotify(
-            auth_manager=SpotifyOAuth(
-                client_id='67c0740055b9412da3e1e14978c42742',
-                client_secret='4116025cf230497699d6feb972d8bfc7',
-                redirect_uri='https://example.org/callback',
-                scope='user-read-playback-state user-modify-playback-state user-library-read user-library-modify'
-            )
-        )
-        current = None
-
-        buffer = 2#seconds
-        
-        current_time = 0
-        song_length = float('inf')
-        progress = 0
-        last_request_time = precise_time()-buffer-0.1
-        last_calculated_time = 0
-        lyrics = ""
-        playing_status = False
-        previous_name = None
-        liked_status = False
-
-    def globalize_key_action_dict():
-        global key_action_dict
-        key_action_dict = {}
-
-    def globalize_action_selector():
-        global action_selector, time_edit_mode
-        action_selector = Selector(
-            field_values= [['progress_bar', 'shuffle', 'previous', 'pause', 'next', 'like']],
-            field_actions= [[toggle_time_edit_mode, toggle_shuffle, previous_track, pause_resume, next_track, like_unlike_current_song]],
-            starting_position= [3, 0],
-        )
-        time_edit_mode = False
-#
-#
-globals()
-
-
-
-
-
-
-def tool_functions():
-    global secs_to_text, secs_to_units
-    global print_separate, highlight
-
-
-    def secs_to_text(seconds:float) :
-        seconds = int(seconds)
-        text = ""
-        for i in range(6):
-            conv = TIME_CONVERT_LIST[i]
-            if conv <= seconds:
-                un = seconds//conv
-                seconds -= un*conv
-                text += str(un) + TIME_CHAR_LIST[i] + " "
-        text = f'{text}\b'
-        return text
-
-    def secs_to_units(seconds:float) :
-        seconds = int(seconds)
-        units = [0 for i in range(6)]
-        for i in range(3):
-            conv = TIME_CONVERT_LIST[3+i]
-            if conv <= seconds:
-                un = seconds//conv
-                seconds -= un*conv
-                s = un%10
-                units[i*2+1] = s
-                if un != s:
-                    units[i*2] = (un-s)//10
-        return units
-
-
-    def print_separate(val_1:any, space_between:str, val_2:any):
-        val_1_string = str(val_1)
-        val_1_len = len(val_1_string)
-
-        val_2_string = str(val_2)
-
-        stdout.write(val_1_string + space_between[val_1_len : ] + val_2_string)
-
-    def highlight(var:any, for_seconds:float= 10):
-        os.system('cls')
-        print()
-        print(var)
-        print()
-        wait_seconds(for_seconds)
-#
-#
-tool_functions()
-
-
-
-
-
 def classes():
     global CharacterMap, TerminalDisplay, CustomImage
     global Selector
@@ -547,6 +259,296 @@ classes()
 
 
 
+def globals():
+    global globalize_screener_values
+    global globalize_time_convert_values
+    global globalize_ART_values
+    global globalize_spotify_values
+    global globalize_key_action_dict
+    global globalize_action_selector
+
+
+    def globalize_screener_values():
+        global DOT, OPAS, THRESHOLDS, CHAR_WIDTH_PER_HEIGHT, CHARACTER_SHAPES
+        global window_width, window_height, terminal_display, display_map, GLOBAL_last_frame_time
+
+        DOT = (os.path.dirname(__file__)).replace('\\','/')
+
+        OPAS = tuple(" .`':,_-;^!<+>=/*?|vLclTxY()r1iz{}tnsJjfCuo7FI][e3aVX2yZShk4AUPw5bqK96dEmpHG%O#D80R&gN$BMQW@")
+
+        THRESHOLDS = (19.92, 36.93, 39.75, 39.84, 42.89, 53.66, 54.4, 62.83, 69.53, 74.17, 105.29, 106.47, 108.4, 109.08, 111.08, 116.27, 117.73, 123.66, 125.45, 125.71, 128.68, 130.03, 131.86, 132.5, 135.4, 137.24, 137.5, 142.01, 142.56, 142.75, 143.7, 146.49, 146.71, 147.49, 148.18, 149.43, 149.48, 153.02, 153.36, 155.5, 156.51, 157.07, 157.39, 157.42, 157.54, 157.6, 157.9, 162.86, 163.27, 165.91, 166.07, 167.35, 167.53, 169.5, 170.98, 172.68, 174.85, 181.89, 182.69, 185.28, 185.88, 186.98, 188.07, 188.71, 194.11, 194.94, 195.06, 195.96, 196.18, 196.41, 196.81, 197.21, 197.27, 198.77, 200.79, 203.01, 204.88, 210.01, 212.57, 215.11, 218.92, 219.69, 221.34, 223.96, 232.33, 232.41, 232.83, 233.37, 240.17, 243.34, 255.0)
+
+        CHAR_WIDTH_PER_HEIGHT = 117/232
+
+        CHARACTER_SHAPES = (((9.2, 246.45, 0.36), (0.0, 15.92, 1.84), (0.0, 0.0, 0.0)),((0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 146.16, 0.0)),((0.0, 0.0, 0.0), (121.82, 161.49, 122.78), (0.0, 0.0, 0.0)),((0.0, 151.87, 0.0), (0.0, 143.26, 0.0), (0.0, 0.0, 0.0)),((0.0, 0.0, 0.0), (0.0, 148.64, 0.0), (0.0, 145.96, 0.0)),((0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (118.91, 157.64, 119.83)),((0.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 314.2, 0.0)),((12.7, 224.55, 13.54), (82.08, 97.76, 83.54), (0.0, 0.0, 0.0)),((0.0, 0.0, 0.0), (243.37, 322.61, 245.28), (0.0, 0.0, 0.0)),((0.0, 0.0, 0.0), (0.0, 148.52, 0.0), (0.0, 314.19, 0.0)),((26.35, 0.0, 0.0), (183.28, 355.89, 212.25), (28.8, 0.0, 0.0)),((0.0, 0.0, 26.04), (205.27, 339.49, 181.82), (0.0, 0.0, 28.37)),((0.0, 56.04, 0.0), (121.94, 434.58, 122.89), (0.0, 58.25, 0.0)),((0.0, 142.66, 0.0), (0.0, 259.75, 0.0), (0.0, 146.03, 0.0)),((0.0, 0.0, 0.0), (213.4, 294.99, 205.79), (149.89, 189.54, 0.0)),((0.0, 0.0, 0.0), (292.51, 176.27, 127.7), (87.63, 177.65, 94.9)),((0.0, 32.66, 0.0), (181.48, 448.31, 183.35), (7.17, 1.02, 7.29)),((0.0, 27.57, 205.16), (8.76, 325.21, 27.76), (174.45, 56.14, 0.0)),((0.0, 0.0, 0.0), (114.68, 388.89, 146.66), (142.24, 180.73, 95.6)),((115.79, 178.18, 99.57), (1.81, 223.96, 111.66), (0.0, 146.75, 0.0)),((0.0, 0.0, 0.0), (200.64, 340.5, 187.72), (97.49, 164.93, 120.92)),((141.99, 0.0, 0.0), (354.36, 0.0, 0.0), (153.27, 161.6, 122.99)),((132.08, 219.56, 133.17), (0.0, 354.87, 0.0), (0.0, 141.04, 0.0)),((0.0, 0.0, 0.0), (271.61, 143.52, 273.5), (9.09, 230.46, 9.73)),((79.32, 230.21, 22.77), (0.0, 157.31, 203.41), (78.39, 228.11, 22.13)),((0.0, 127.84, 164.43), (73.54, 0.0, 354.94), (126.97, 163.48, 101.78)),((175.23, 164.46, 194.53), (85.01, 198.7, 190.97), (0.0, 154.96, 0.0)),((21.78, 229.87, 80.33), (199.77, 160.49, 0.0), (21.13, 227.67, 79.27)),((0.0, 282.01, 0.0), (0.0, 355.97, 0.0), (0.0, 280.77, 0.0)),((146.51, 164.26, 133.25), (359.35, 164.61, 59.0), (141.14, 0.0, 0.0)),((0.0, 146.15, 2.28), (73.62, 406.6, 0.0), (95.34, 216.23, 120.51)),((0.0, 252.76, 69.87), (57.29, 386.48, 0.0), (0.0, 253.06, 68.84)),((81.12, 175.41, 138.92), (378.41, 0.32, 0.0), (85.75, 176.77, 116.29)),((69.11, 253.45, 0.0), (0.0, 385.16, 58.54), (68.13, 254.27, 0.0)),((0.0, 200.11, 129.53), (135.12, 434.79, 101.69), (0.0, 143.14, 0.0)),((96.0, 219.73, 96.76), (0.0, 355.92, 0.0), (94.45, 217.33, 95.2)),((106.64, 172.18, 108.33), (9.62, 195.48, 256.12), (97.52, 166.19, 102.68)),((92.58, 197.85, 0.0), (0.35, 356.42, 0.0), (93.74, 217.35, 103.29)),((38.02, 88.53, 0.0), (216.0, 353.96, 94.49), (14.83, 195.76, 105.72)),((122.97, 184.7, 0.0), (0.0, 358.25, 0.0), (0.0, 188.76, 106.37)),((0.0, 0.0, 0.0), (338.91, 17.49, 324.65), (127.21, 149.57, 196.44)),((32.98, 295.25, 82.78), (49.03, 306.97, 0.0), (32.68, 292.54, 81.89)),((0.0, 0.0, 0.0), (343.76, 165.91, 310.29), (143.55, 0.0, 143.57)),((0.0, 0.0, 0.0), (314.37, 314.31, 251.41), (93.04, 170.07, 77.21)),((0.0, 0.0, 0.0), (304.73, 183.13, 306.3), (99.62, 180.66, 100.99)),((103.5, 171.6, 159.64), (48.24, 301.93, 49.94), (156.44, 169.05, 110.64)),((112.57, 174.22, 83.44), (196.95, 177.83, 256.37), (115.6, 166.08, 121.97)),((147.31, 0.0, 147.42), (93.71, 381.18, 95.15), (0.0, 141.12, 0.0)),((0.0, 0.0, 0.0), (135.04, 396.15, 133.46), (116.57, 84.51, 118.12)),((0.0, 98.22, 50.01), (55.67, 306.91, 143.23), (91.83, 302.23, 91.82)),((0.0, 0.0, 0.0), (273.07, 125.44, 284.62), (144.45, 404.74, 22.51)),((0.0, 0.0, 0.0), (194.09, 337.25, 222.76), (149.58, 140.1, 189.13)),((81.81, 293.91, 34.7), (0.0, 303.85, 51.62), (80.93, 291.21, 34.41)),((118.18, 173.61, 93.31), (8.13, 190.84, 203.74), (152.24, 194.2, 113.1)),((154.63, 164.26, 125.01), (366.98, 164.06, 50.48), (153.27, 161.6, 122.99)),((105.71, 169.41, 99.07), (150.37, 206.65, 162.71), (112.26, 161.5, 116.47)),((0.0, 0.0, 0.0), (308.6, 378.47, 313.41), (141.74, 125.78, 126.02)),((0.0, 0.0, 0.0), (322.79, 152.33, 342.28), (128.18, 147.14, 356.14)),((182.44, 0.0, 0.0), (373.49, 229.74, 249.68), (144.42, 21.11, 154.15)),((154.46, 166.4, 122.55), (366.9, 166.5, 280.66), (140.83, 0.0, 0.0)),((23.41, 172.31, 73.27), (367.11, 170.75, 252.47), (114.58, 168.11, 119.82)),((181.15, 0.0, 0.0), (367.78, 158.5, 310.16), (143.41, 0.0, 143.43)),((107.51, 169.68, 114.2), (254.76, 164.63, 376.95), (67.45, 175.64, 32.23)),((0.0, 0.0, 181.11), (324.52, 154.12, 371.54), (130.12, 152.26, 147.31)),((75.2, 49.24, 127.68), (392.08, 199.3, 372.6), (0.0, 14.04, 126.64)),((144.75, 0.0, 144.76), (250.69, 187.88, 252.93), (7.61, 235.89, 8.32)),((0.0, 0.0, 0.0), (347.85, 156.83, 325.68), (356.24, 151.9, 131.24)),((109.78, 172.04, 110.76), (368.24, 0.0, 368.43), (111.88, 169.2, 112.93)),((93.57, 171.62, 129.89), (376.59, 78.91, 207.66), (100.52, 170.6, 164.61)),((181.18, 0.0, 0.0), (368.5, 158.05, 325.87), (157.32, 160.45, 86.76)),((141.69, 0.0, 142.43), (354.15, 0.0, 354.38), (111.19, 173.1, 110.41)),((5.01, 231.47, 5.43), (250.13, 353.43, 253.17), (140.3, 0.0, 140.31)),((141.81, 0.0, 140.58), (371.32, 265.92, 219.42), (140.65, 4.14, 158.88)),((142.54, 20.09, 142.93), (70.82, 487.91, 72.8), (139.75, 22.52, 140.57)),((141.69, 0.0, 142.67), (374.8, 165.53, 377.36), (140.54, 0.0, 141.51)),((0.0, 0.0, 0.0), (354.73, 349.75, 361.41), (143.43, 123.06, 144.87)),((114.89, 171.66, 115.88), (295.98, 197.49, 297.37), (124.01, 164.45, 124.79)),((162.54, 167.11, 119.27), (374.66, 217.61, 295.9), (140.54, 5.33, 154.13)),((162.47, 174.0, 88.41), (353.62, 0.0, 372.21), (161.19, 170.41, 93.56)),((40.13, 96.11, 105.08), (322.6, 428.49, 326.77), (102.71, 95.09, 41.22)),((105.75, 303.86, 99.35), (150.37, 372.58, 162.73), (112.63, 296.14, 116.84)),((154.46, 170.67, 100.67), (366.9, 173.03, 305.02), (153.26, 163.47, 149.51)),((0.0, 0.0, 0.0), (324.65, 157.1, 347.19), (223.11, 329.87, 284.65)),((93.8, 179.68, 95.14), (366.59, 156.06, 365.96), (95.96, 176.56, 97.18)),((179.7, 105.66, 180.87), (342.96, 300.89, 345.29), (134.8, 0.0, 135.57)),((170.54, 51.81, 142.24), (360.13, 280.92, 359.05), (141.51, 50.96, 170.1)),((141.61, 0.0, 141.61), (337.71, 403.03, 337.82), (147.39, 146.33, 148.77)),((109.78, 172.04, 110.76), (368.32, 0.0, 368.25), (111.99, 347.85, 200.46)),((154.52, 132.67, 0.0), (259.87, 410.84, 270.21), (0.43, 123.8, 162.2)),((85.36, 187.22, 89.1), (315.45, 268.92, 200.51), (157.23, 176.94, 171.74)),((82.65, 165.65, 105.93), (292.41, 372.71, 342.46), (164.06, 263.04, 109.96)),)
+        
+
+        window_width = 96
+        window_height = 36
+
+        terminal_display = TerminalDisplay(window_height+2)
+
+        display_map = CharacterMap(window_width, window_height, filler=' ', U1dtype=False)
+
+        GLOBAL_last_frame_time = 0
+
+    def globalize_time_convert_values():
+        global TIME_CONVERT_LIST, TIME_CHAR_LIST
+
+        TIME_CONVERT_LIST = (29030400, 604800, 86400, 3600, 60, 1)
+        TIME_CHAR_LIST = ('y', 'w', 'd', 'h', 'm', 's')
+
+    def globalize_ART_values():
+        global ART_ARRAYS, ART_COLORS, ART_PLACES
+        ART_ARRAYS = {
+            '0-3x3' : (".o.", "| |", "'0'"),
+            '1-3x3' : (".~1", "  |", "  |"),
+            '2-3x3' : ("˛=,", " ,I", "2__"),
+            '3-3x3' : ("˙`\\", " *3", ".˛/"),
+            '4-3x3' : ("/  ", "4+*", " | "),
+            '5-3x3' : ("_~~", "5o.", "--/"),
+            '6-3x3' : ("˛o.", "6*.", "˙o˙"),
+            '7-3x3' : ("\"\"7", " / ", "*  "),
+            '8-3x3' : (",o,", ",8,", "˙o˙"),
+            '9-3x3' : (".o,", "´~9", " / "),
+
+            '0-5x4' :  
+            (",:-:,",
+            ";   ;",
+            ";   ;",
+            "':_:'"),
+
+            '1-5x4' :  
+            ("  ,1 ", 
+            " / | ", 
+            "   | ", 
+            "   | "),
+
+            '2-5x4' :  
+            (" .-~,", 
+            "    '", 
+            "  ,˝ ", 
+            " /___"),
+
+            '3-5x4' :  
+            (" ,~, ", 
+            "   / ", 
+            "  ˝\\ ", 
+            " \\_/ "),
+
+            '4-5x4' :  
+            ("  /  ", 
+            " / , ", 
+            "/__4_", 
+            "   | "),
+
+            '5-5x4' :  
+            (" ,---", 
+            " \\__ ", 
+            "    \\", 
+            " \\__/"),
+
+            '6-5x4' :  
+            (" ,~- ", 
+            "í    ", 
+            "|¨˝\\ ", 
+            "'__/ "),
+
+            '7-5x4' :  
+            (" --~;", 
+            "   / ", 
+            "  /  ", 
+            " /   "),
+            
+            '8-5x4' :  
+            (" /~\\ ", 
+            " \\_/ ", 
+            " / \\ ", 
+            " \\_/ "),
+
+            '9-5x4' :  
+            (" ,--,", 
+            " {  |", 
+            "  '*}", 
+            " ._/ "),
+
+            'previous' : (" .-", "<:|", " ˙-"),
+            'pause' :    ("¤ ¤", "O O", "¤ ¤"),
+            'resume' :   ("¤. ", "O]>", "¤˙ "),
+            'next' :     ("-. ", "|:>", "-˙ "),
+            'no_shuffle' :    (".¸ ˛.", "  =  ", "˙´ `˙"),
+            'shuffle' :       ("~¸ ˛>", "  ¤  ", "~´ `>"),
+            'smart_shuffle' : ("@¸ ˛>", "  ¤  ", "~´ `>"),
+            'like' :  (",-.-,", "', ,'", "  `  "),
+            'liked' : (",=_=,", "\\"+"%"+"X%/", " ˇ÷ˇ "),
+            'cover_art' : [". "*30]*30,
+            'progress_bar' : [" "*60],
+            'next_up' : ["NEXT UP"],
+            'next_up_serials' : [f"{i+1}." for i in range(9)],
+            'next_up_tracks' : [" "*27]*9,
+            'next_up_xs' : ["×"]*9,
+            'playing_from' : ["Playing from:"],
+            'playlist' : [" "*47],
+            'artists' : [" "*60],
+            'track_name' : [" "*59],
+            '3x3_line' : [" "*29]*3,
+            'last_3x3' : [" "*3]*3,
+            'hour_dots' : [" "]*4,
+            '5x4_second_0' : [" "*5]*4,
+            '5x4_second_1' : [" "*5]*4,
+            '5x4_minute_0' : [" "*5]*4,
+            '5x4_minute_1' : [" "*5]*4,
+            'divider_colon' : ("¤", "¤"),
+            'lyrics' : [" "*33]*2 + ["."*33] + [" "*33]*2 + ["˙"*33] + [" "*33]*4,
+        }
+        
+        ART_COLORS = {
+            'playing_from' : f"\033[38;2;{170};{170};{170}m",
+            'next_up' : f"\033[38;2;{190};{190};{192}m",
+            'next_up_serials' : f"\033[38;2;{170};{170};{174}m",
+            'next_up_tracks' : f"\033[38;2;{199};{199};{199}m",
+            'next_up_xs' : f"\033[38;2;{170};{170};{174}m",
+            'artists' : f"\033[38;2;{176};{176};{178}m",
+            'selector' : f"\033[38;2;{157};{214};{245}m",
+        }
+        for key in ART_ARRAYS.keys():
+            try:
+                _ = ART_COLORS[key]
+            except:
+                ART_COLORS.update({key : Fore.WHITE})
+            ART_ARRAYS[key] = contracted_art_to_array(ART_ARRAYS[key], color=ART_COLORS[key])
+
+        ART_PLACES = {
+                            # row, col [0<=, 0<=]
+            'no_shuffle'     : (33, 66),
+            'shuffle'        : (33, 66),
+            'smart_shuffle'  : (33, 66),
+            'previous'      : (33, 73),
+            'pause'          : (33, 78),
+            'resume'         : (33, 78),
+            'next'          : (33, 83),
+            'like'           : (33, 88),
+            'liked'          : (33, 88),
+            'cover_art' : (2, 2),
+            'progress_bar' : (32, 2),
+            'next_up'         : (1,63),
+            'next_up_serials' : (2, 63),
+            'next_up_tracks'  : (2, 66),
+            'next_up_xs'      : (2, 95),
+            'playing_from' : (0, 1),
+            'playlist' : (0, 15),
+            'artists'  : (33, 2),
+            'track_name' : (34, 3),
+            '3x3_line' : (29, 64),
+            'last_3x3' : (29, 90),
+            'hour_dots' : (24, 63),
+            '5x4_second_0' : (24, 88),
+            '5x4_second_1' : (24, 81),
+            '5x4_minute_0' : (24, 73),
+            '5x4_minute_1' : (24, 66),
+            'divider_colon' : (25, 79),
+            'lyrics' : (12, 63),
+        }
+
+    def globalize_spotify_values():
+        global sp, current, buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status
+        sp = spotipy.Spotify(
+            auth_manager=SpotifyOAuth(
+                client_id='67c0740055b9412da3e1e14978c42742',
+                client_secret='4116025cf230497699d6feb972d8bfc7',
+                redirect_uri='https://example.org/callback',
+                scope='user-read-playback-state user-modify-playback-state user-library-read user-library-modify'
+            )
+        )
+        current = None
+
+        buffer = 2#seconds
+        
+        current_time = 0
+        song_length = float('inf')
+        progress = 0
+        last_request_time = precise_time()-buffer-0.1
+        last_calculated_time = 0
+        lyrics = ""
+        playing_status = False
+        previous_name = None
+        liked_status = False
+
+    def globalize_key_action_dict():
+        global key_action_dict
+        key_action_dict = {}
+
+    def globalize_action_selector():
+        global action_selector, time_edit_mode
+        action_selector = Selector(
+            field_values= [['progress_bar', 'shuffle', 'previous', 'pause', 'next', 'like']],
+            field_actions= [[toggle_time_edit_mode, toggle_shuffle, previous_track, pause_resume, next_track, like_unlike_current_song]],
+            starting_position= [3, 0],
+        )
+        time_edit_mode = False
+#
+#
+globals()
+
+
+
+
+
+
+
+
+
+def tool_functions():
+    global secs_to_text, secs_to_units
+    global print_separate, highlight
+
+
+    def secs_to_text(seconds:float) :
+        seconds = int(seconds)
+        text = ""
+        for i in range(6):
+            conv = TIME_CONVERT_LIST[i]
+            if conv <= seconds:
+                un = seconds//conv
+                seconds -= un*conv
+                text += str(un) + TIME_CHAR_LIST[i] + " "
+        text = f'{text}\b'
+        return text
+
+    def secs_to_units(seconds:float) :
+        seconds = int(seconds)
+        units = [0 for i in range(6)]
+        for i in range(3):
+            conv = TIME_CONVERT_LIST[3+i]
+            if conv <= seconds:
+                un = seconds//conv
+                seconds -= un*conv
+                s = un%10
+                units[i*2+1] = s
+                if un != s:
+                    units[i*2] = (un-s)//10
+        return units
+
+
+    def print_separate(val_1:any, space_between:str, val_2:any):
+        val_1_string = str(val_1)
+        val_1_len = len(val_1_string)
+
+        val_2_string = str(val_2)
+
+        stdout.write(val_1_string + space_between[val_1_len : ] + val_2_string)
+
+    def highlight(var:any, for_seconds:float= 10):
+        os.system('cls')
+        print()
+        print(var)
+        print()
+        wait_seconds(for_seconds)
+#
+#
+tool_functions()
+
+
 
 
 def general_functions():
@@ -570,11 +572,14 @@ def general_functions():
             pass
 
 
-    def contracted_art_to_array(art):
+    def contracted_art_to_array(art, color=Fore.WHITE, end_color=Fore.WHITE):
         l = []
         for string in art:
             s = list(string)
-            s[0] = Fore.WHITE + s[0]
+            if color:
+                for i in range(len(s)): s[i] = color + s[i] + end_color
+            else:
+                s[-1] = s[-1] + end_color
             l.append(s)
 
         return np.array(l)
@@ -595,7 +600,7 @@ def general_functions():
             os.system('powershell -ExecutionPolicy Bypass -Command "Start-Process .\\Spotify.lnk -WindowStyle Hidden"')
             print("Launching spotify...\n")
             while not is_spotify_running(): wait(0.1)
-        wait(3)
+            wait(3)
 
 
     def get_preferred_device_id():
@@ -660,9 +665,8 @@ def general_functions():
             key_action_dict = k_a_d
 
             print("\n\nSelected:",device_selector.get_val())
-        wait(1)
-        sp.transfer_playback(selected_device_id)
         wait(0.5)
+        sp.transfer_playback(selected_device_id)
 
 
     def call_action_and_update_status():
@@ -891,9 +895,7 @@ def spotify_status_functions():
 
             place_art('next_up_tracks')
 
-            next_up_tracks = np.array([tuple(string) for string in next_up_tracks])
-
-            display_map.add_map_array(ART_PLACES['next_up_tracks'], next_up_tracks)
+            display_map.add_map_array(ART_PLACES['next_up_tracks'], contracted_art_to_array(next_up_tracks, ART_COLORS['next_up_tracks']))
 
 
     def get_album_cover_url():
@@ -927,6 +929,8 @@ def spotify_status_functions():
         def parse_lrc(lrc_content):
             timestamp_pattern = re.compile(r'\[(\d+):(\d+(?:\.\d+)?)\]')
             lyrics = []
+            if not lrc_content:
+                return " "
             for line in lrc_content.splitlines():
                 timestamps = timestamp_pattern.findall(line)
                 if timestamps:
@@ -1053,7 +1057,7 @@ def spotify_status_functions():
             elif context_type == 'artist':
                 return current['item']['artists'][0]['name']
         else:
-            return " "
+            return "Spotify's selection"
 
     def update_playlist_name():
         playlist_name = get_current_playlist_name()[ :len(ART_ARRAYS['playlist'][0])]
@@ -1074,7 +1078,7 @@ def spotify_status_functions():
         track_name = get_current_track_name()[ :len(ART_ARRAYS['track_name'][0])]
         place_art('track_name')
 
-        display_map.add_map_array(ART_PLACES['track_name'], np.array([tuple(track_name)]))
+        display_map.add_map_array(ART_PLACES['track_name'], contracted_art_to_array([track_name], ART_COLORS['track_name']))
         
         return track_name
 
@@ -1091,10 +1095,8 @@ def spotify_status_functions():
     def update_artists():
         artists = get_current_artists()[ :len(ART_ARRAYS['artists'][0])]
         place_art('artists')
-        a_l = list(artists)
-        a_l[0] = Fore.WHITE + a_l[0]
 
-        display_map.add_map_array(ART_PLACES['artists'], np.array([a_l]))
+        display_map.add_map_array(ART_PLACES['artists'], contracted_art_to_array([artists], ART_COLORS['artists']))
 
         return artists
                 
@@ -1116,7 +1118,7 @@ def spotify_status_functions():
                         size = (5, 5)
                     else:
                         size = (3, 3)
-                    display_map.add_map_array((i, j), contracted_art_to_array([f'#'*size[0]]*size[1]))
+                    display_map.add_map_array((i, j), contracted_art_to_array([f'#'*size[0]]*size[1], ART_COLORS['selector']))
 #
 #
 spotify_status_functions()
@@ -1260,7 +1262,7 @@ def song_view():
             time_since_last_sync = round(precise_time() - last_request_time,1)
             sys.stdout.write(f'\n\033[38;2;{55};{55};{55}mLast Sync:\033[38;2;{30};{40};{40}m {time_since_last_sync}'+' '*75)
             if 10< time_since_last_sync:
-                pass
+                sp.transfer_playback(DEVICE_ID)
 
         except Exception as e:
             sys.stdout.write(73*f'\b'+f'\033[38;2;{120};{55};{55}m|Error| {e}')
@@ -1318,17 +1320,16 @@ def search_and_play():
 # /// Main thread \\\
 
 if __name__ == "__main__":
+    # ~~ Guess terminal as currently focused window
+    TERMINAL_WINDOW_ID = win32gui.GetForegroundWindow()
+
     # ~~ Initialize colorama, Clear output, Hide cursor
     colorama.init()
     os.system('cls')
     stdout.write("\033[?25l")
 
-    # ~~ Guess terminal as currently focused window
-    TERMINAL_WINDOW_ID = win32gui.GetForegroundWindow()
-
     # ~~ Ensure Spotify
     make_sure_spotify_is_running()
-
     # ~~ Focus back on terminal window
     win32gui.SetForegroundWindow(TERMINAL_WINDOW_ID)
     
