@@ -481,7 +481,7 @@ def write_image(image_path:str, size:tuple= ("width", "height"), convert_method=
             height = round(factor * c_img.array.shape[0])
     except: pass
 
-    img_map = c_img.to_color_shape_map(width, height, convert_method)
+    img_map = c_img.to_color_shape_map(2*width, height, convert_method)
     terminal_display = TerminalDisplay(height)
     terminal_display.update(img_map)
 
