@@ -22,7 +22,7 @@ import sys
 from pynput import keyboard
 from pynput.keyboard import Key
 
-import win32gui
+from win32gui import GetForegroundWindow, SetForegroundWindow
 
 import psutil
 
@@ -33,7 +33,7 @@ import psutil
 
 def classes():
     global CharacterMap, TerminalDisplay, CustomImage
-    global Selector
+    global Selector, Typer
 ###
 ###
     class CharacterMap:
@@ -210,11 +210,13 @@ def classes():
             di, dj = -dy, dx
             new_i, new_j = i+di, j+dj
 
+            self.last_interaction_time = precise_time()
+            
             if 0<= new_i< len(self.field_values) and 0<= new_j< len(self.field_values[0]):
 
                 if self.field_values[new_i][new_j] != -1 and self.field_values[new_i][new_j] != self.field_values[i][j]:
                     self.position = new_i, new_j
-                    self.last_interaction_time = precise_time()
+                            
                     return self.field_values[new_i][new_j]
             
             return False
@@ -241,6 +243,167 @@ def classes():
 
         def move_right(self):
             self.move((1, 0))
+
+    class Typer():
+        def __init__(self, text:str= "", cursor_position:int= 0, scope:tuple[int, int]= [0, 100]):
+            self.text = text
+            self.cursor_position = cursor_position
+            self.scope = list(scope)
+            self.last_interaction_time = 0
+        
+        def __str__(self):
+            return self.text
+        
+        def __iter__(self):
+            yield self.text
+            yield self.cursor_position
+
+
+        def get_in_scope_with_markers(self):
+            s = self.text[self.scope[0] : self.scope[1]]
+            if 0< self.scope[0]:
+                s = '…' + s[1:]
+            if self.scope[1]< len(self.text):
+                s = s[:-1] + '…'
+
+            return s
+
+        def get(self):
+            return self.get_in_scope_with_markers()
+        
+        def get_with_cursor(self, cursor:str= "_"):
+            s = self.get_in_scope_with_markers()
+            s = s[: self.cursor_position] + cursor + s[self.cursor_position+1 :]
+            return s
+
+
+        def add_text(self, text:str= ""):
+            self.text = self.text[: self.cursor_position] + text + self.text[self.cursor_position :]
+            self.move_cursor_right(len(text))
+
+            self.last_interaction_time = precise_time()
+
+        
+        def clear(self):
+            self.text = ""
+            self.cursor_position = 0
+
+            self.last_interaction_time = precise_time()
+        
+
+        def backspace(self, amount:int= 1):
+            self.text = self.text[: self.cursor_position-amount] + self.text[self.cursor_position :]
+            self.move_cursor_left(amount) 
+
+            self.last_interaction_time = precise_time()
+
+        def delete(self, amount:int= 1):
+            self.text = self.text[: self.cursor_position] + self.text[self.cursor_position+amount :]
+
+            self.last_interaction_time = precise_time()
+
+
+        def ctrl_backspace(self):
+            there_was_a_char = False
+            leading_spaces = 0
+            i = self.cursor_position-1
+            while -1< i:
+                if self.text[i] == ' ':
+                    if there_was_a_char:
+                        break
+                    else:
+                        leading_spaces += 1
+                else:
+                    there_was_a_char = True
+                    if 2<= leading_spaces:
+                        break
+                i -= 1
+            
+            self.backspace(self.cursor_position - i - 1)
+
+            self.last_interaction_time = precise_time()
+
+        def ctrl_delete(self):
+            there_was_a_char = False
+            leading_spaces = 0
+            i = self.cursor_position
+
+            while i< len(self.text):
+                if self.text[i] == ' ':
+                    if there_was_a_char:
+                        break
+                    else:
+                        leading_spaces += 1
+                else:
+                    there_was_a_char = True
+                    if 2<= leading_spaces:
+                        break
+                i += 1
+                
+            self.delete(i - self.cursor_position)
+
+            self.last_interaction_time = precise_time()
+
+
+        def move_cursor(self, amount:int= +1):
+            new_position = max(0, min(self.cursor_position+amount, len(self.text)))
+            
+            self.cursor_position = new_position
+
+            if new_position< self.scope[0]:
+                d = new_position - self.scope[0]
+            elif self.scope[1]<= new_position:
+                d = new_position - self.scope[1]
+
+            self.scope[0] += d
+            self.scope[1] += d
+
+            self.last_interaction_time = precise_time()
+
+
+        def move_cursor_left(self, amount:int= 1):
+            self.move_cursor(-amount)
+        
+        def move_cursor_right(self, amount:int= 1):
+            self.move_cursor(amount)
+        
+
+        def ctrl_move_cursor_left(self):
+            there_was_a_char = False
+            leading_spaces = 0
+            i = self.cursor_position-1
+            while -2< i:
+                if self.text[i] == ' ':
+                    if there_was_a_char:
+                        break
+                    else:
+                        leading_spaces += 1
+                else:
+                    there_was_a_char = True
+                    if 2<= leading_spaces:
+                        break
+                i -= 1
+            
+            self.move_cursor_left(self.cursor_position - i - 1)
+
+        def ctrl_move_cursor_right(self):
+            there_was_a_char = False
+            leading_spaces = 0
+            i = self.cursor_position
+
+            while i< len(self.text):
+                if self.text[i] == ' ':
+                    if there_was_a_char:
+                        break
+                    else:
+                        leading_spaces += 1
+                else:
+                    there_was_a_char = True
+                    if 2<= leading_spaces:
+                        break
+                i += 1
+            
+            self.move_cursor_right(i - self.cursor_position)
 ###
 ##
 classes()
@@ -258,6 +421,7 @@ def globals():
     global globalize_spotify_values
     global globalize_key_action_dict
     global globalize_action_selector
+    global globalize_mode_values
 ###
 ###
     def globalize_screener_values():
@@ -284,15 +448,17 @@ def globals():
 
         GLOBAL_last_frame_time = 0
 
+
     def globalize_time_convert_values():
         global TIME_CONVERT_LIST, TIME_CHAR_LIST
 
         TIME_CONVERT_LIST = (29030400, 604800, 86400, 3600, 60, 1)
         TIME_CHAR_LIST = ('y', 'w', 'd', 'h', 'm', 's')
 
+
     def globalize_ART_values():
-        global ART_ARRAYS, ART_COLORS, ART_PLACES
-        ART_ARRAYS = {
+        global CONTRACTED_ART_ARRAYS, ART_ARRAYS, ART_COLORS, ART_PLACES
+        CONTRACTED_ART_ARRAYS = {
             '0-3x3' : (".o.", "| |", "'0'"),
             '1-3x3' : (".~1", "  |", "  |"),
             '2-3x3' : ("˛=,", " ,I", "2__"),
@@ -392,8 +558,9 @@ def globals():
             '5x4_minute_0' : [" "*5]*4,
             '5x4_minute_1' : [" "*5]*4,
             'lyrics' : [" "*33]*2 + ["."*33] + [" "*33]*2 + ["˙"*33] + [" "*33]*4,
-            'search_bar' : [":"*56]*3,
+            'search_bar' : [":"*58]*3,
         }
+        ART_ARRAYS = CONTRACTED_ART_ARRAYS.copy()
 
         ART_PLACES = {
                             # row, col [0<=, 0<=]
@@ -441,6 +608,8 @@ def globals():
             'divider_colon' : rgb(180, 180, 180),
             '3x3_slash' : rgb(160, 160, 160),
             'search_bar' : rgb(42, 42, 42),
+            'search_text' : rgb(255, 255, 255),
+            'search_result_text' : rgb(210, 210, 210),
         }
         for i in range(10):
             ART_COLORS.update({f'{i}-5x4' : rgb(180, 180, 180)})
@@ -472,8 +641,9 @@ def globals():
             ART_ARRAYS['search_bar'][2][1:-1] = rgb(255, 255, 255) + "."
         color_search_bar()
 
+
     def globalize_spotify_values():
-        global sp, current, buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status
+        global sp, current, buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status, time_since_last_sync, album_cover_array, search_result_tracks
         sp = spotipy.Spotify(
             auth_manager=SpotifyOAuth(
                 client_id='67c0740055b9412da3e1e14978c42742',
@@ -495,19 +665,33 @@ def globals():
         playing_status = False
         previous_name = None
         liked_status = False
+        time_since_last_sync = float('inf')
+        album_cover_array = []
+        search_result_tracks = None
+
 
     def globalize_key_action_dict():
         global key_action_dict
         key_action_dict = {}
 
+
     def globalize_action_selector():
-        global action_selector, time_edit_mode
+        global action_selector
         action_selector = Selector(
             field_values= [['progress_bar', 'shuffle', 'previous', 'pause', 'next', 'like']],
             field_actions= [[toggle_time_edit_mode, toggle_shuffle, previous_track, pause_resume, next_track, like_unlike_current_song]],
             starting_position= [3, 0],
         )
+    
+
+    def globalize_mode_values():
+        global time_edit_mode, search_mode, search_typer, listener, ctrl_is_pressed
         time_edit_mode = False
+        search_mode = False
+        search_typer = Typer(scope=[0, len(ART_ARRAYS['search_bar'][0])-4])
+
+        listener = None
+        ctrl_is_pressed = False
 ###
 ##
 globals()
@@ -522,12 +706,16 @@ def general_functions():
     global secs_to_text, secs_to_units
     global print_separate, highlight
     global rgb
-    global on_press
+    global terminal_is_focused
     global contracted_art_to_array, place_art
-    global is_spotify_running, make_sure_spotify_is_running
+    global is_spotify_running, ensure_spotify_is_running
     global get_devices, choose_from_devices, get_preferred_device_id
     global call_action_and_update_status
-    global set_action_selector_for_key_dict
+    global on_press_for_selector, on_press_for_typer
+    global set_listener_for_selector, set_listener_for_typer
+    global set_action_selector_for_key_dict, set_search_typer_for_key_dict, search_tracks_with_typer
+    global toggle_time_edit_mode, toggle_search_mode
+    global place_search_results
 ###
 ###
     def secs_to_text(seconds:float) :
@@ -577,15 +765,8 @@ def general_functions():
         return f"\033[38;2;{r};{g};{b}m"
 
 
-    def on_press(key):
-        try:
-            if win32gui.GetForegroundWindow() == TERMINAL_WINDOW_ID :
-                try:          
-                    key_action_dict[key.char]()
-                except:
-                    key_action_dict[key]()
-        except:
-            pass
+    def terminal_is_focused():
+        return GetForegroundWindow() == TERMINAL_WINDOW_ID
 
 
     def contracted_art_to_array(art, color=Fore.WHITE, end_color=Fore.WHITE):
@@ -611,7 +792,7 @@ def general_functions():
                 return True
         return False
 
-    def make_sure_spotify_is_running():
+    def ensure_spotify_is_running():
         if not is_spotify_running():
             os.system('powershell -ExecutionPolicy Bypass -Command "Start-Process .\\Spotify.lnk -WindowStyle Hidden"')
             print("Launching spotify...\n")
@@ -651,7 +832,8 @@ def general_functions():
             key_action_dict = {
                 'a' : device_selector.move_left,   Key.left : device_selector.move_left,
                 'd' : device_selector.move_right,  Key.right : device_selector.move_right,
-                'e' : select,                      Key.space : select,
+                Key.space : select,
+                'e' : terminal_display.clear,
             }
 
             print("Choose a device:\n")
@@ -697,6 +879,58 @@ def general_functions():
         current = sp.current_playback()
 
 
+    def on_press_for_selector(key):
+        if terminal_is_focused():
+            try:
+                try:
+                    c = key.char
+                    key_action_dict[c]()
+                except:
+                    key_action_dict[key]()
+            except:
+                pass
+    
+    def on_press_for_typer(key):
+        global search_typer, search_result_tracks
+
+        if terminal_is_focused():
+            try:
+                search_typer.last_interaction_time = precise_time()
+                try:
+                    key_action_dict[key]()
+                except:
+                    if key == Key.space:
+                        c = " "
+                    else:
+                        c = key.char
+                    
+                    search_result_tracks = None
+                    search_typer.add_text(c)
+            except:
+                pass
+
+
+    def set_listener_for_selector():
+        global listener
+        try:
+            listener.stop()
+        except: pass
+        listener = keyboard.Listener(on_press=on_press_for_selector)
+        listener.start()
+        
+    def set_listener_for_typer():
+        global listener
+        def release_ctrl(key):
+            global ctrl_is_pressed
+            if terminal_is_focused and key==Key.ctrl_l:
+                ctrl_is_pressed = False
+        try:
+            listener.stop()
+        except: pass
+        listener = keyboard.Listener(on_press=on_press_for_typer, on_release=release_ctrl)
+        listener.start()
+
+
     def set_action_selector_for_key_dict():
         global key_action_dict
         key_action_dict = {
@@ -704,9 +938,107 @@ def general_functions():
             's' : action_selector.move_down,      Key.down : action_selector.move_down,
             'a' : action_selector.move_left,      Key.left : action_selector.move_left,
             'd' : action_selector.move_right,     Key.right : action_selector.move_right,
-            'e' : call_action_and_update_status,  Key.space : call_action_and_update_status,
+            Key.space : call_action_and_update_status,
             'f' : toggle_search_mode,
+            'e' : terminal_display.clear,
         }
+
+    def set_search_typer_for_key_dict():
+        global key_action_dict
+
+        def press_ctrl():
+            global ctrl_is_pressed
+            ctrl_is_pressed = True
+
+        def press_left():
+            if ctrl_is_pressed:
+                search_typer.ctrl_move_cursor_left()
+            else:
+                search_typer.move_cursor_left()
+
+        def press_right():
+            if ctrl_is_pressed:
+                search_typer.ctrl_move_cursor_right()
+            else:
+                search_typer.move_cursor_right()
+
+        def press_backspace():
+            if ctrl_is_pressed:
+                search_typer.ctrl_backspace()
+            else:
+                search_typer.backspace()
+
+        def press_delete():
+            if ctrl_is_pressed:
+                search_typer.ctrl_delete()
+            else:
+                search_typer.delete()
+
+        global search_tracks_with_typer
+        def search_tracks_with_typer():
+            search_tracks(search_typer.text)
+
+        key_action_dict = {
+            Key.ctrl_l : press_ctrl,
+            Key.left : press_left,
+            Key.right : press_right,
+            Key.backspace : press_backspace,
+            Key.delete : press_delete,
+            Key.enter : search_tracks_with_typer,
+            Key.esc : toggle_search_mode,
+        }
+
+
+    def toggle_time_edit_mode():
+        global time_edit_mode, key_action_dict, _k_a_d
+        time_edit_mode = not time_edit_mode
+        if time_edit_mode:
+            _k_a_d = key_action_dict.copy()
+            key_action_dict.update({
+                'a' : adjust_time_left,  Key.left : adjust_time_left,
+                'd' : adjust_time_right,  Key.right : adjust_time_right,
+            })
+        else:
+            key_action_dict = _k_a_d
+
+        return time_edit_mode
+
+    def toggle_search_mode():
+        global search_mode, key_action_dict, _k_a_d, search_typer, search_result_tracks
+
+        search_mode = not search_mode
+        
+
+        if search_mode:
+            set_listener_for_typer()
+            
+            _k_a_d = key_action_dict.copy()
+            set_search_typer_for_key_dict()
+
+            #search_typer.last_interaction_time = precise_time()
+        else:
+            set_listener_for_selector()
+
+            key_action_dict = _k_a_d
+
+            search_result_tracks = None
+            
+        return search_mode
+
+
+    def place_search_results():
+        amount = len(search_result_tracks)
+        for row in range(amount):
+            i,j = ART_PLACES['search_bar']
+            display_map.add_map_array((i+3+row, j), np.array([ART_ARRAYS['search_bar'][1]]))
+            l = len(ART_ARRAYS['search_bar'][0])-4
+            track_text = search_result_tracks[row][0]
+            if l< len(track_text):
+                track_text = track_text[:l-1] + '…'
+            display_map.add_map_array((i+3+row, j+2), contracted_art_to_array([track_text], ART_COLORS['search_result_text']))
+
+        display_map.add_map_array((i+3+amount, j), np.array([ART_ARRAYS['search_bar'][2]]))
+###
 ###
 ##
 general_functions()
@@ -724,12 +1056,12 @@ def spotify_status_functions():
     global get_time, update_time
     global update_progress_bar
     global get_next_up_tracks, update_next_up_tracks
-    global get_album_cover_url, download_image, update_album_cover
+    global get_album_cover_url, download_image, get_album_cover_array, update_album_cover
     global get_lyrics, get_current_lyrics_part, update_lyrics
     global get_current_playlist_name, update_playlist_name
     global get_current_track_name, update_track_name
     global get_current_artists, update_artists
-    global update_selector
+    global update_selector, update_search_bar
 #
 #
     def get_shuffle_status():
@@ -922,16 +1254,19 @@ def spotify_status_functions():
         except:
             return CustomImage(ART_ARRAYS['cover_art'])
 
-    def update_album_cover():
+    def get_album_cover_array():
+        album_cover_url = get_album_cover_url() # 'https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0' # 
+        downloaded_image = download_image(album_cover_url)
+
+        #for tw, th in ((30,30),(90,90)): Image.fromarray(downloaded_image.downscale(tw,th).array).save(f"album_cover-{tw}x{th}.png")
+
+        album_cover_array = downloaded_image.to_color_shape_map(60,30).array
+
+        return album_cover_array
+
+    def update_album_cover(album_cover_array):
         if current:
-            album_cover_url = get_album_cover_url() # 'https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0' # 
-            downloaded_image = download_image(album_cover_url)
-
-            #for tw, th in ((30,30),(90,90)): Image.fromarray(downloaded_image.downscale(tw,th).array).save(f"album_cover-{tw}x{th}.png")
-
-            album_cover = downloaded_image.to_color_shape_map(60,30)
-
-            display_map.add_map_array(ART_PLACES['cover_art'], album_cover.array)
+            display_map.add_map_array(ART_PLACES['cover_art'], album_cover_array)
 
 
 
@@ -1112,8 +1447,9 @@ def spotify_status_functions():
                 
 
     def update_selector():
-        global time_edit_mode
         if current:
+            place_art('previous'); place_art('next')
+
             dt = precise_time() - action_selector.last_interaction_time
             if dt>5:
                 if time_edit_mode: toggle_time_edit_mode()
@@ -1122,13 +1458,34 @@ def spotify_status_functions():
                     selected = action_selector.get_val()
                     i, j = ART_PLACES[selected]
                     if selected == "progress_bar":
-                        j = j + round(progress*60)-1
+                        j = j + max(0, round(progress*60)-1)
                         size = (1, 1)
                     elif selected == 'shuffle' or selected == 'like':
                         size = (5, 5)
                     else:
                         size = (3, 3)
+
                     display_map.add_map_array((i, j), contracted_art_to_array([f'#'*size[0]]*size[1], ART_COLORS['selector']))
+
+    def update_search_bar():
+        if current:
+            if search_mode:
+                place_art('search_bar')
+                i, j = ART_PLACES['search_bar']
+                dt = precise_time() - search_typer.last_interaction_time
+
+                if dt-int(dt)< 0.5:
+                    text = search_typer.get_with_cursor()
+                else:
+                    text = search_typer.get()
+                
+                display_map.add_map_array((i+1, j+2), contracted_art_to_array([text], ART_COLORS['search_text']))
+
+                if 0.2< dt and (not search_result_tracks) and search_typer.text:
+                    search_tracks_with_typer()
+            
+            if search_result_tracks:
+                place_search_results()
 ###
 ##
 spotify_status_functions()
@@ -1142,7 +1499,7 @@ def spotify_interact_functions():
     global previous_track, next_track
     global like_unlike_current_song
     global adjust_time, adjust_time_left, adjust_time_right
-    global toggle_time_edit_mode, toggle_search_mode
+    global search_tracks
 ###
 ###
     def toggle_shuffle():
@@ -1158,7 +1515,10 @@ def spotify_interact_functions():
 
 
     def pause_resume():
-        if current:
+        if 10< time_since_last_sync:
+            sp.transfer_playback(DEVICE_ID)
+            terminal_display.clear()
+        elif current:
             if current['is_playing']:
                 sp.pause_playback()
             else:
@@ -1175,6 +1535,7 @@ def spotify_interact_functions():
     def next_track():
         sp.next_track()
 
+
     def like_unlike_current_song():
         global liked_status
 
@@ -1187,6 +1548,7 @@ def spotify_interact_functions():
                 sp.current_user_saved_tracks_add([track_id])
 
             liked_status = not liked_status
+
 
     def adjust_time(dir=+1, change=15):
         global current_time, progress
@@ -1205,23 +1567,13 @@ def spotify_interact_functions():
         action_selector.last_interaction_time = precise_time()
 
 
-    def toggle_time_edit_mode():
-        global time_edit_mode, key_action_dict, _k_a_d, action_selector
-        time_edit_mode = not time_edit_mode
-        if time_edit_mode:
-            _k_a_d = key_action_dict.copy()
-            key_action_dict.update({
-                'a' : adjust_time_left,  Key.left : adjust_time_left,
-                'd' : adjust_time_right,  Key.right : adjust_time_right,
-            }
-            )
-        else:
-            key_action_dict = _k_a_d
+    def search_tracks(query:str, limit=5):
+        global search_result_tracks
 
-        return time_edit_mode
-
-    def toggle_search_mode():
-        pass
+        results = sp.search(q=query, type='track', limit=limit)['tracks']['items']
+        search_result_tracks = [(f"{track['name']} - {', '.join(artist['name'] for artist in track['artists'])}",track['uri']) for track in results]
+        return search_result_tracks
+        #sp.start_playback(uris=[track_uri])
 ###
 ##
 spotify_interact_functions()
@@ -1229,8 +1581,9 @@ spotify_interact_functions()
 
 
 
-def song_view():
-    global sp, current, current_time, song_length, progress, liked_status
+
+def main_loop():
+    global sp, current, current_time, song_length, progress, liked_status, time_since_last_sync, album_cover_array, DEVICE_ID
 
     last_request_time, last_calculated_time, lyrics, playing_status, previous_name = (0, 0, "", False, "")
 
@@ -1265,7 +1618,7 @@ def song_view():
                     
                     if current['item']:
                         if previous_name != current['item']['name']:
-                            update_album_cover()
+                            album_cover_array = get_album_cover_array()
                             update_next_up_tracks()
                             song_length = get_song_length()
                             update_song_length(song_length)
@@ -1294,76 +1647,68 @@ def song_view():
 
             update_liked_status(liked_status)
 
-            place_art('previous'); place_art('next')
             update_selector()
 
-            place_art('search_bar')
+            update_album_cover(album_cover_array)
+
+            update_search_bar()
+
             terminal_display.update(display_map, 12)
 
             time_since_last_sync = round(precise_time() - last_request_time,1)
-            sys.stdout.write(f'\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync}'+' '*75)
-            
+            sys.stdout.write(f'\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync} ')
+
             if 10< time_since_last_sync:
-                sp.transfer_playback(DEVICE_ID)
+                sys.stdout.write(f'{rgb(120, 55, 55)}+')
+                ensure_spotify_is_running()
+                DEVICE_ID = get_preferred_device_id()
+                if not playing_status:
+                    sp.pause_playback()
 
         except Exception as e:
-            sys.stdout.write(73*f'\b'+f'{rgb(120, 55, 55)}|Error| {e}')
+            sys.stdout.write(f'{rgb(120, 55, 55)}|Error| {e}')
             sys.stdout.flush()
-            wait(2.1)
-            terminal_display.clear()
 
 
 
 
 
-
-
-
-def search_and_play():
-    search_result_tracks = sp.search(q=query, type='track', limit=5)['tracks']['items']
-    track_uri = search_result_tracks[0]['uri']
-    sp.start_playback(uris=[track_uri])
-
-
-
-
-
-
-
-
-# /// Main thread \\\
-
-if __name__ == "__main__":
-    # ~~ Guess terminal as currently focused window
-    TERMINAL_WINDOW_ID = win32gui.GetForegroundWindow()
-
-    # ~~ Initialize colorama, Clear output, Hide cursor
-    colorama.init()
-    os.system('cls')
-    stdout.write("\033[?25l")
-
-    # ~~ Ensure Spotify
-    make_sure_spotify_is_running()
-    # ~~ Focus back on terminal window
-    win32gui.SetForegroundWindow(TERMINAL_WINDOW_ID)
-    
-    # ~~ Set globals
-    globalize_screener_values()
-    globalize_time_convert_values()
-    globalize_ART_values()
-    globalize_spotify_values()
-    globalize_key_action_dict()
-    globalize_action_selector()
-
-    # ~~ Start keyboard listener
-    listener = keyboard.Listener(on_press=on_press)
-    listener.start()
-
-    # ~~ Choose device
-    DEVICE_ID = get_preferred_device_id()  
-
-    # ~~ Use action_selector
-    set_action_selector_for_key_dict()
-
-    # ~~ Start song_view()
-    song_view()
+# ///==================== Main thread ====================\\\
+                                                            #
+if __name__ == "__main__":                                  #
+    # ~~ Guess terminal as currently focused window         #
+    TERMINAL_WINDOW_ID = GetForegroundWindow()              #
+                                                            #
+    # ~~ Initialize colorama, Clear output, Hide cursor     #
+    colorama.init()                                         #
+    os.system('cls')                                        #
+    stdout.write("\033[?25l")                               #
+                                                            #
+    # ~~ Ensure Spotify                                     #
+    ensure_spotify_is_running()                             #
+    # ~~ Focus back on terminal window                      #
+    SetForegroundWindow(TERMINAL_WINDOW_ID)                 #
+                                                            #
+    # ~~ Set globals                                        #
+    globalize_screener_values()                             #
+    globalize_time_convert_values()                         #
+    globalize_ART_values()                                  #
+    globalize_spotify_values()                              #
+    globalize_key_action_dict()                             #
+    globalize_action_selector()                             #
+    globalize_mode_values()                                 #
+                                                            #
+    # ~~ Start listener                                     #
+    set_listener_for_selector()                             #
+                                                            #
+    # ~~ Choose device                                      #
+    DEVICE_ID = get_preferred_device_id()                   #
+                                                            #
+    # ~~ Use action_selector                                #
+    set_action_selector_for_key_dict()                      #
+                                                            #
+    # ~~ Enter main loop                                    #
+    main_loop()                                             #
+                                                            #
+# \\\================== Main thread end ==================///
+                                                             
