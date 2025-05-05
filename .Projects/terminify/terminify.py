@@ -603,6 +603,7 @@ def globals():
             'next_up_xs' : rgb(170, 170, 174),
             'artists' : rgb(176, 176, 178),
             'selector' : rgb(157, 214, 245),
+            'shuffle' : rgb(25, 196, 88),
             'smart_shuffle' : rgb(25, 196, 88),
             'liked' : rgb(24, 220, 96),
             'divider_colon' : rgb(180, 180, 180),
@@ -665,7 +666,7 @@ def globals():
         playing_status = False
         previous_name = None
         liked_status = False
-        time_since_last_sync = float('inf')
+        time_since_last_sync = precise_time()-buffer-0.1
         album_cover_array = []
         search_result_tracks = None
 
@@ -1585,7 +1586,7 @@ spotify_interact_functions()
 def main_loop():
     global sp, current, current_time, song_length, progress, liked_status, time_since_last_sync, album_cover_array, DEVICE_ID
 
-    last_request_time, last_calculated_time, lyrics, playing_status, previous_name = (0, 0, "", False, "")
+    last_request_time, last_calculated_time, lyrics, playing_status, previous_name = (precise_time()-buffer-0.1, 0, "", False, "")
 
 
     display_map.fill()
