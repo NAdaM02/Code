@@ -5,7 +5,6 @@ from time import sleep as wait_seconds
 import os
 import numpy as np
 import cv2
-from PIL.ImageGrab import grab as take_screenshot
 from sys import stdout
 from PIL import Image
 import colorama
@@ -947,46 +946,58 @@ def general_functions():
     def set_search_typer_for_key_dict():
         global key_action_dict
 
-        def press_ctrl():
+        def pressed_ctrl():
             global ctrl_is_pressed
             ctrl_is_pressed = True
 
-        def press_left():
+        def pressed_left():
             if ctrl_is_pressed:
                 search_typer.ctrl_move_cursor_left()
             else:
                 search_typer.move_cursor_left()
 
-        def press_right():
+        def pressed_right():
             if ctrl_is_pressed:
                 search_typer.ctrl_move_cursor_right()
             else:
                 search_typer.move_cursor_right()
 
-        def press_backspace():
+        def pressed_backspace():
             if ctrl_is_pressed:
                 search_typer.ctrl_backspace()
             else:
                 search_typer.backspace()
 
-        def press_delete():
+        def pressed_delete():
             if ctrl_is_pressed:
                 search_typer.ctrl_delete()
             else:
                 search_typer.delete()
+
+        def pressed_down():
+            pass
+        
+        def pressed_up():
+            pass
+
+        def pressed_tab():
+            pass
 
         global search_tracks_with_typer
         def search_tracks_with_typer():
             search_tracks(search_typer.text)
 
         key_action_dict = {
-            Key.ctrl_l : press_ctrl,
-            Key.left : press_left,
-            Key.right : press_right,
-            Key.backspace : press_backspace,
-            Key.delete : press_delete,
+            Key.ctrl_l : pressed_ctrl,
+            Key.left : pressed_left,
+            Key.right : pressed_right,
+            Key.backspace : pressed_backspace,
+            Key.delete : pressed_delete,
             Key.enter : search_tracks_with_typer,
             Key.esc : toggle_search_mode,
+            Key.down : pressed_down,
+            Key.up : pressed_up,
+            Key.tab : pressed_tab,
         }
 
 
@@ -1030,16 +1041,16 @@ def general_functions():
     def place_search_results():
         amount = len(search_result_tracks)
         for row in range(amount):
-            i,j = ART_PLACES['search_bar']
-            display_map.add_map_array((i+3+row, j), np.array([ART_ARRAYS['search_bar'][1]]))
-            l = len(ART_ARRAYS['search_bar'][0])-4
-            track_text = search_result_tracks[row][0]
-            if l< len(track_text):
-                track_text = track_text[:l-1] + '…'
-            display_map.add_map_array((i+3+row, j+2), contracted_art_to_array([track_text], ART_COLORS['search_result_text']))
+            if search_result_tracks[row][0]:
+                i,j = ART_PLACES['search_bar']
+                display_map.add_map_array((i+3+row, j), np.array([ART_ARRAYS['search_bar'][1]]))
+                l = len(ART_ARRAYS['search_bar'][0])-4
+                track_text = search_result_tracks[row][0]
+                if l< len(track_text):
+                    track_text = track_text[:l-1] + '…'
+                display_map.add_map_array((i+3+row, j+2), contracted_art_to_array([track_text], ART_COLORS['search_result_text']))
 
         display_map.add_map_array((i+3+amount, j), np.array([ART_ARRAYS['search_bar'][2]]))
-###
 ###
 ##
 general_functions()
@@ -1063,8 +1074,8 @@ def spotify_status_functions():
     global get_current_track_name, update_track_name
     global get_current_artists, update_artists
     global update_selector, update_search_bar
-#
-#
+###
+###
     def get_shuffle_status():
         if current:
             if current['smart_shuffle']:
@@ -1571,9 +1582,12 @@ def spotify_interact_functions():
     def search_tracks(query:str, limit=5):
         global search_result_tracks
 
-        results = sp.search(q=query, type='track', limit=limit)['tracks']['items']
-        search_result_tracks = [(f"{track['name']} - {', '.join(artist['name'] for artist in track['artists'])}",track['uri']) for track in results]
-        return search_result_tracks
+        if query:
+            results = sp.search(q=query, type='track', limit=limit)['tracks']['items']
+            search_result_tracks = [(f"{track['name']} - {', '.join(artist['name'] for artist in track['artists'])}",track['uri']) for track in results]
+            return search_result_tracks
+        else:
+            return None
         #sp.start_playback(uris=[track_uri])
 ###
 ##
