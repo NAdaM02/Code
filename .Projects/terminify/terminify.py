@@ -203,6 +203,27 @@ def classes():
             self.last_interaction_time = 0
             self.field_actions = field_actions
 
+        def get_position(self):
+            i, j = self.position
+            x, y = len(self.field_values)-i-1, j
+            return [x, y]
+
+        def move_to(self, place:tuple[int, int]):
+            i, j = self.position
+            x, y = place
+            new_i, new_j = len(self.field_values)-y-1, x
+
+            self.last_interaction_time = precise_time()
+            
+            if 0<= new_i< len(self.field_values) and 0<= new_j< len(self.field_values[0]):
+
+                if self.field_values[new_i][new_j] != -1 and self.field_values[new_i][new_j] != self.field_values[i][j]:
+                    self.position = new_i, new_j
+                            
+                    return self.field_values[new_i][new_j]
+            
+            return False
+
         def move(self, direction:tuple[int, int]):
             i, j = self.position
             dx, dy = direction
@@ -685,10 +706,11 @@ def globals():
     
 
     def globalize_mode_values():
-        global time_edit_mode, search_mode, search_typer, listener, ctrl_is_pressed
+        global time_edit_mode, search_mode, search_typer, search_result_selector, listener, ctrl_is_pressed
         time_edit_mode = False
         search_mode = False
         search_typer = Typer(scope=[0, len(ART_ARRAYS['search_bar'][0])-4])
+        search_result_selector = None
 
         listener = None
         ctrl_is_pressed = False
@@ -804,8 +826,6 @@ def general_functions():
         return sp.devices().get('devices', [])
 
     def choose_from_devices(devices):
-        global selected_device_id
-
         names = []
         ids = []
         for device in devices:
@@ -857,8 +877,10 @@ def general_functions():
             key_action_dict = _k_a_d
 
             print("\n\nSelected:",device_selector.get_val())
+            
+        return selected_device_id
 
-    def get_preferred_device_id():
+    def get_preferred_device_id(print_none_active:bool= False):
         devices = get_devices()
         if not devices:
             raise("No available devices found.")
@@ -866,11 +888,14 @@ def general_functions():
         for device in devices:
             if device.get('is_active') and not device.get('is_restricted'):
                 return device['id']
-        print("No active devices found.")
+        if print_none_active:
+            print("No active devices found.")
 
-        choose_from_devices(devices)
+        device_id = choose_from_devices(devices)
         wait(0.5)
-        sp.transfer_playback(selected_device_id)
+        sp.transfer_playback(device_id)
+
+        return device_id
 
 
     def call_action_and_update_status():
@@ -899,10 +924,7 @@ def general_functions():
                 try:
                     key_action_dict[key]()
                 except:
-                    if key == Key.space:
-                        c = " "
-                    else:
-                        c = key.char
+                    c = key.char
                     
                     search_result_tracks = None
                     search_typer.add_text(c)
@@ -946,6 +968,21 @@ def general_functions():
     def set_search_typer_for_key_dict():
         global key_action_dict
 
+        def pressed_space():
+            global search_typer
+            selected = search_result_selector.get_val()
+            if selected == "Search":
+                search_typer.add_text(" ")
+            else:
+                sp.add_to_queue(uri=selected, device_id=DEVICE_ID)
+        
+        def pressed_enter():
+            selected = search_result_selector.get_val()
+            if selected == "Search":
+                search_tracks_with_typer()
+            else:
+                sp.start_playback(uris=[selected], device_id=DEVICE_ID)
+
         def pressed_ctrl():
             global ctrl_is_pressed
             ctrl_is_pressed = True
@@ -975,25 +1012,37 @@ def general_functions():
                 search_typer.delete()
 
         def pressed_down():
-            pass
+            search_result_selector.move_down()
         
         def pressed_up():
-            pass
-
+            search_result_selector.move_up()
+        
         def pressed_tab():
-            pass
+            global search_result_selector
+            if search_result_selector.get_position() == [0, 0]:
+                search_result_selector.move_to([0, len(search_result_tracks)-1])
+            else:
+                search_result_selector.move_down()
 
         global search_tracks_with_typer
         def search_tracks_with_typer():
+            global search_result_selector
+
             search_tracks(search_typer.text)
+            if search_result_tracks:
+                search_result_selector = Selector(
+                    field_values=[["Search"]]+[[track_and_uri[1]] for track_and_uri in search_result_tracks],
+                    starting_position=[0, len(search_result_tracks)]
+                )
 
         key_action_dict = {
+            Key.space : pressed_space,
             Key.ctrl_l : pressed_ctrl,
             Key.left : pressed_left,
             Key.right : pressed_right,
             Key.backspace : pressed_backspace,
             Key.delete : pressed_delete,
-            Key.enter : search_tracks_with_typer,
+            Key.enter : pressed_enter,
             Key.esc : toggle_search_mode,
             Key.down : pressed_down,
             Key.up : pressed_up,
@@ -1016,7 +1065,7 @@ def general_functions():
         return time_edit_mode
 
     def toggle_search_mode():
-        global search_mode, key_action_dict, _k_a_d, search_typer, search_result_tracks
+        global search_mode, key_action_dict, _k_a_d, search_typer, search_result_tracks, search_result_selector
 
         search_mode = not search_mode
         
@@ -1034,23 +1083,26 @@ def general_functions():
             key_action_dict = _k_a_d
 
             search_result_tracks = None
+            search_typer.clear()
             
         return search_mode
 
 
     def place_search_results():
-        amount = len(search_result_tracks)
-        for row in range(amount):
-            if search_result_tracks[row][0]:
+        for row, track in enumerate(search_result_tracks):
+            track_text = track[0]
+            if track_text:
                 i,j = ART_PLACES['search_bar']
                 display_map.add_map_array((i+3+row, j), np.array([ART_ARRAYS['search_bar'][1]]))
                 l = len(ART_ARRAYS['search_bar'][0])-4
-                track_text = search_result_tracks[row][0]
                 if l< len(track_text):
                     track_text = track_text[:l-1] + '…'
-                display_map.add_map_array((i+3+row, j+2), contracted_art_to_array([track_text], ART_COLORS['search_result_text']))
+                if track[1] == search_result_selector.get_val():
+                    display_map.add_map_array((i+3+row, j+2), contracted_art_to_array([track_text], ART_COLORS['selector']))
+                else:
+                    display_map.add_map_array((i+3+row, j+2), contracted_art_to_array([track_text], ART_COLORS['search_result_text']))
 
-        display_map.add_map_array((i+3+amount, j), np.array([ART_ARRAYS['search_bar'][2]]))
+        display_map.add_map_array((i+3+len(search_result_tracks), j), np.array([ART_ARRAYS['search_bar'][2]]))
 ###
 ##
 general_functions()
@@ -1496,8 +1548,8 @@ def spotify_status_functions():
                 if 0.2< dt and (not search_result_tracks) and search_typer.text:
                     search_tracks_with_typer()
             
-            if search_result_tracks:
-                place_search_results()
+                if search_result_tracks:
+                    place_search_results()
 ###
 ##
 spotify_status_functions()
@@ -1671,7 +1723,7 @@ def main_loop():
             terminal_display.update(display_map, 12)
 
             time_since_last_sync = round(precise_time() - last_request_time,1)
-            sys.stdout.write(f'\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync} ')
+            sys.stdout.write(f'\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync}')
 
             if 10< time_since_last_sync:
                 sys.stdout.write(f'{rgb(120, 55, 55)}+')
@@ -1717,7 +1769,7 @@ if __name__ == "__main__":                                  #
     set_listener_for_selector()                             #
                                                             #
     # ~~ Choose device                                      #
-    DEVICE_ID = get_preferred_device_id()                   #
+    DEVICE_ID = get_preferred_device_id(True)               #
                                                             #
     # ~~ Use action_selector                                #
     set_action_selector_for_key_dict()                      #
