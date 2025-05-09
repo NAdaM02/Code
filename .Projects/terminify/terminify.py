@@ -675,7 +675,7 @@ def globals():
         )
         current = None
 
-        buffer = 2#seconds
+        buffer = 0.3#seconds
         
         current_time = 0
         song_length = float('inf')
@@ -826,6 +826,8 @@ def general_functions():
         return sp.devices().get('devices', [])
 
     def choose_from_devices(devices):
+        global selected_device_id
+        selected_device_id = None
         names = []
         ids = []
         for device in devices:
@@ -837,7 +839,6 @@ def general_functions():
             selected_device_id = ids[0]
             print("\nSelected:", names[0])
         else:
-            selected_device_id = None
             
             device_selector = Selector(
                 field_values=[names],
@@ -852,7 +853,7 @@ def general_functions():
             key_action_dict = {
                 'a' : device_selector.move_left,   Key.left : device_selector.move_left,
                 'd' : device_selector.move_right,  Key.right : device_selector.move_right,
-                Key.space : select,
+                Key.space : select,                Key.enter : select,
                 'e' : terminal_display.clear,
             }
 
@@ -1720,7 +1721,7 @@ def main_loop():
 
             update_search_bar()
 
-            terminal_display.update(display_map, 12)
+            terminal_display.update(display_map, fps=12)
 
             time_since_last_sync = round(precise_time() - last_request_time,1)
             sys.stdout.write(f'\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync}')
