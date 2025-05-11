@@ -629,7 +629,7 @@ def globals():
         )
         current = None
 
-        request_buffer = 0.9#seconds
+        request_buffer = 0.5#seconds
         
         current_time = 0
         song_length = float('inf')
@@ -943,13 +943,17 @@ def general_functions():
                 search_typer.add_text(" ")
             else:
                 sp.add_to_queue(uri=selected, device_id=DEVICE_ID)
+                update_next_up_tracks()
         
         def pressed_enter():
             selected = search_result_selector.get_val()
             if selected == "Search":
                 search_tracks_with_typer()
             else:
-                sp.start_playback(uris=[selected], device_id=DEVICE_ID)
+                sp.add_to_queue(uri=selected, device_id=DEVICE_ID)
+                get_next_up_tracks()
+                next_track()
+                toggle_search_mode()
 
         def pressed_ctrl():
             global ctrl_is_pressed
@@ -1630,9 +1634,11 @@ def spotify_interact_functions():
 
     def decrease_volume():
         adjust_volume(dir=-1)
+        wait(0.1)
 
     def increase_volume():
         adjust_volume(dir=+1)
+        wait(0.1)
 
 
     def search_tracks(query:str, limit=8):
@@ -1685,13 +1691,10 @@ def main_loop():
                     last_calculated_time = current_time
 
                     last_request_time = precise_time()
-
-                    update_playlist_name()
-                    update_next_up_tracks()
-                    update_shuffle_status()
                     
                     if current['item']:
                         if previous_name != current['item']['name']:
+                            update_playlist_name()
                             volume = get_volume()
                             song_length = get_song_length()
                             update_song_length(song_length)
@@ -1699,7 +1702,7 @@ def main_loop():
                             update_track_name()
                             update_artists()
                             liked_status = get_liked_status()
-
+                            update_next_up_tracks()
                             album_cover_array = get_album_cover_array()
 
                         previous_name = current['item']['name']
@@ -1717,8 +1720,9 @@ def main_loop():
             
             update_lyrics(lyrics, current_time)
             
-            
             playing_status = update_playing_status()
+
+            update_shuffle_status()
 
             update_liked_status(liked_status)
 
