@@ -1748,7 +1748,7 @@ def main_loop():
             terminal_display.update(display_map, fps=12)
 
             time_since_last_sync = round(precise_time() - last_request_time,1)
-            sys.stdout.write(f'\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync} {rgb(255, 255, 255)}{volume/10}')
+            sys.stdout.write(f'\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync}')
 
             if 10< time_since_last_sync:
                 sys.stdout.write(f'{rgb(120, 55, 55)}+')
