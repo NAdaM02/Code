@@ -529,7 +529,7 @@ def globals():
             '5x4_minute_1' : [" "*5]*4,
             'lyrics' : [" "*33]*2 + ["."*33] + [" "*33]*2 + ["˙"*33] + [" "*33]*4,
             'search_bar' : [":"*58]*3,
-            'volume_bar' : ["˙"]*11,
+            'volume_bar' : ["˙"]*10,
         }
 
         ART_PLACES = {
@@ -618,7 +618,7 @@ def globals():
 
 
     def globalize_spotify_values():
-        global sp, current, request_buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status, time_since_last_sync, album_cover_array, search_result_tracks, volume
+        global sp, current, request_buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status, time_since_last_sync, album_cover_array, search_result_tracks, volume, last_volume_adjust_time
         sp = spotipy.Spotify(
             auth_manager=spotipy.oauth2.SpotifyOAuth(
                 client_id='67c0740055b9412da3e1e14978c42742',
@@ -644,6 +644,7 @@ def globals():
         album_cover_array = []
         search_result_tracks = None
         volume = 0
+        last_volume_adjust_time = 0
 
 
     def globalize_key_action_dict():
@@ -1535,12 +1536,22 @@ def spotify_status_functions():
 
     def update_volume_bar():
         scale = len(ART_ARRAYS['volume_bar'])
-        vol = round(volume/100*scale)
-        volume_string = "˙"*(scale-vol) + "*" + "'"*(vol-1)
-        volume_list = list(volume_string)
-
+        
         if volume == 0:
             volume_list = ["˙"]*scale
+        else:
+            vol = volume/100*scale-0.5
+
+            pos_marker = ""
+            if 0.5<= vol-int(vol) :
+                pos_marker = "'"
+            else:
+                pos_marker = ","
+            
+            vol = int(vol)+1
+            volume_string = "˙"*(scale-vol) + pos_marker + "'"*(vol-1)
+
+            volume_list = list(volume_string[:scale])
 
         display_map.add_map_array(ART_PLACES['volume_bar'], contracted_art_to_array(volume_list, ART_COLORS['volume_bar']))
 ###
@@ -1626,19 +1637,19 @@ def spotify_interact_functions():
 
 
     def adjust_volume(dir:int= +1, change:int= 5):
-        global volume
+        global volume, last_volume_adjust_time
         if current:
-            volume = max(0, min(volume + dir*change, 100))
+            if 0.1< precise_time() - last_volume_adjust_time:
+                volume = max(0, min(volume + dir*change, 100))
+                sp.volume(volume)
 
-            sp.volume(volume)
+                last_volume_adjust_time = precise_time()
 
     def decrease_volume():
         adjust_volume(dir=-1)
-        wait(0.1)
 
     def increase_volume():
         adjust_volume(dir=+1)
-        wait(0.1)
 
 
     def search_tracks(query:str, limit=8):
@@ -1737,7 +1748,7 @@ def main_loop():
             terminal_display.update(display_map, fps=12)
 
             time_since_last_sync = round(precise_time() - last_request_time,1)
-            sys.stdout.write(f'\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync}')
+            sys.stdout.write(f'\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync} {rgb(255, 255, 255)}{volume/10}')
 
             if 10< time_since_last_sync:
                 sys.stdout.write(f'{rgb(120, 55, 55)}+')
