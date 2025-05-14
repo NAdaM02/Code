@@ -1530,7 +1530,7 @@ def spotify_status_functions():
                     display_map.add_map_array((i+3+row, j+2), contracted_art_to_array([track_text], ART_COLORS['selector']))
                 else:
                     display_map.add_map_array((i+3+row, j+2), contracted_art_to_array([track_text], ART_COLORS['search_result_text']))
-
+        
         display_map.add_map_array((i+3+len(search_result_tracks), j), np.array([ART_ARRAYS['search_bar'][2]]))
 
 
@@ -1660,7 +1660,7 @@ def spotify_interact_functions():
             search_result_tracks = [(f"{track['name']} - {', '.join(artist['name'] for artist in track['artists'])}",track['uri']) for track in results]
             return search_result_tracks
         else:
-            return None
+            return []
         #sp.start_playback(uris=[track_uri])
 ###
 ##
