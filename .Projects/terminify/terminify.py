@@ -618,7 +618,7 @@ def globals():
 
 
     def globalize_spotify_values():
-        global sp, current, request_buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status, time_since_last_sync, album_cover_array, search_result_tracks, volume, last_volume_adjust_time
+        global sp, current, request_buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status, time_since_last_sync, album_cover_array, search_result_tracks, volume, last_volume_adjust_time, last_time_adjust_time
         sp = spotipy.Spotify(
             auth_manager=spotipy.oauth2.SpotifyOAuth(
                 client_id='67c0740055b9412da3e1e14978c42742',
@@ -645,6 +645,7 @@ def globals():
         search_result_tracks = None
         volume = 0
         last_volume_adjust_time = 0
+        last_time_adjust_time = 0
 
 
     def globalize_key_action_dict():
@@ -1620,12 +1621,17 @@ def spotify_interact_functions():
 
 
     def adjust_time(dir:int= +1, change:float= 15.0):
-        global current_time, progress
+        global current_time, progress, last_time_adjust_time, last_request_time
         if current:
-            new_time = max(0, min((current_time + dir*change), get_song_length()-0.1))
-            current_time = new_time
-            progress = new_time / song_length
-            sp.seek_track(int(new_time*1000), DEVICE_ID)
+            if 0.05< precise_time() - last_time_adjust_time:
+                new_time = max(0, min((current_time + dir*change), song_length-0.1))
+                current_time = new_time
+                progress = new_time / song_length
+                sp.seek_track(int(new_time*1000), DEVICE_ID)
+                
+                t = precise_time()
+                last_request_time = t-request_buffer-0.1
+                last_time_adjust_time = t
 
     def adjust_time_left():
         adjust_time(-1)
@@ -1639,7 +1645,7 @@ def spotify_interact_functions():
     def adjust_volume(dir:int= +1, change:int= 5):
         global volume, last_volume_adjust_time
         if current:
-            if 0.1< precise_time() - last_volume_adjust_time:
+            if 0.05< precise_time() - last_volume_adjust_time:
                 volume = max(0, min(volume + dir*change, 100))
                 sp.volume(volume)
 
@@ -1807,4 +1813,3 @@ if __name__ == "__main__":                                  #
     main_loop()                                             #
                                                             #
 # \\\================== Main thread end ==================///
-                                                             
