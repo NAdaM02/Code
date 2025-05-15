@@ -24,7 +24,7 @@ from win32gui import GetForegroundWindow, SetForegroundWindow
 
 import psutil
 
-
+from dotenv import load_dotenv
 
 
 
@@ -619,10 +619,11 @@ def globals():
 
     def globalize_spotify_values():
         global sp, current, request_buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status, time_since_last_sync, album_cover_array, search_result_tracks, volume, last_volume_adjust_time, last_time_adjust_time
+        load_dotenv()
         sp = spotipy.Spotify(
             auth_manager=spotipy.oauth2.SpotifyOAuth(
-                client_id='67c0740055b9412da3e1e14978c42742',
-                client_secret='4116025cf230497699d6feb972d8bfc7',
+                client_id=os.getenv('CLIENT_ID'),
+                client_secret=os.getenv('CLIENT_SECRET'),
                 redirect_uri='https://example.org/callback',
                 scope='user-read-playback-state user-modify-playback-state user-library-read user-library-modify'
             )
