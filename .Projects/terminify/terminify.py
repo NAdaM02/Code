@@ -14,16 +14,12 @@ from io import BytesIO
 from colorama import Fore
 from scipy.spatial.distance import cdist
 import re, syncedlyrics
-
 import sys
-
 from pynput import keyboard
 from pynput.keyboard import Key
-
-from win32gui import GetForegroundWindow, SetForegroundWindow
-
+import ctypes
+from pygetwindow import getActiveWindow
 import psutil
-
 from dotenv import load_dotenv
 
 
@@ -57,7 +53,7 @@ def classes():
             x, y = key
             self.array[self.height-y-1][x] = value
             
-        def fill(self, fill='??'):
+        def fill(self, fill='??') -> np.array:
             if fill == '??':
                 filler = self.filler
             else:
@@ -66,7 +62,7 @@ def classes():
             self.array[:, :] = filler
             return self.array
         
-        def get_subarray(self, first_rows:int= None, last_rows:int= None, first_columns:int= None, last_columns:int= None):
+        def get_subarray(self, first_rows:int= None, last_rows:int= None, first_columns:int= None, last_columns:int= None) -> np.array:
             if first_rows is None:
                 first_rows = 0
             if last_rows is None:
@@ -81,7 +77,7 @@ def classes():
 
             return self.array[first_rows:last_rows+1, first_columns:last_columns+1]
 
-        def add_map_array(self, position:tuple= ('row','col'), added_array:np.array= (), exclude_chars:tuple= ()):
+        def add_map_array(self, position:tuple[int, int]= ('row','col'), added_array:np.array= (), exclude_chars:tuple[str, ...]= ()) -> np.array:
             height, width = self.array.shape
             added_height, added_width = added_array.shape
             row, col = position
@@ -108,7 +104,7 @@ def classes():
 
             return self.array
         
-        def replace(self, replace_what:str= ',', replace_with:str= ' '):
+        def replace(self, replace_what:str= ',', replace_with:str= ' ') -> np.array:
             self.array[self.array == replace_what] = replace_with
             
             return self.array
@@ -148,12 +144,12 @@ def classes():
         def __init__(self, image_array:np.array= ()):
             self.array = np.array(image_array)
 
-        def downscale(self, target_width:int, target_height:int, method=cv2.INTER_LINEAR_EXACT):
+        def downscale(self, target_width:int, target_height:int, method=cv2.INTER_LINEAR_EXACT) -> any:
             self.array = cv2.resize(self.array, (target_width, target_height), interpolation=method)
 
             return self
 
-        def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, downscale_method:int= cv2.INTER_LINEAR_EXACT):
+        def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, downscale_method:int= cv2.INTER_LINEAR_EXACT) -> np.array:
 
             self.downscale(target_width * 3, target_height * 3, downscale_method)
 
@@ -193,7 +189,7 @@ def classes():
 
 
     class Selector():
-        def __init__(self, field_values:tuple[tuple[int, ...], ...], field_actions:tuple[tuple[any, ...], ...]= None, starting_position:tuple[int, int]=[0, 0]):
+        def __init__(self, field_values:tuple[tuple[any, ...], ...], field_actions:tuple[tuple[any, ...], ...]= None, starting_position:tuple[int, int]=[0, 0]):
             """restricted zones : -1"""
             self.field_values = field_values
             x, y = starting_position
@@ -202,7 +198,7 @@ def classes():
             self.last_interaction_time = 0
             self.field_actions = field_actions
 
-        def get_position(self):
+        def get_position(self) -> tuple[int, int]:
             i, j = self.position
             x, y = len(self.field_values)-i-1, j
             return [x, y]
@@ -218,10 +214,6 @@ def classes():
 
                 if self.field_values[new_i][new_j] != -1 and self.field_values[new_i][new_j] != self.field_values[i][j]:
                     self.position = new_i, new_j
-                            
-                    return self.field_values[new_i][new_j]
-            
-            return False
 
         def move(self, direction:tuple[int, int]):
             i, j = self.position
@@ -235,16 +227,12 @@ def classes():
 
                 if self.field_values[new_i][new_j] != -1 and self.field_values[new_i][new_j] != self.field_values[i][j]:
                     self.position = new_i, new_j
-                            
-                    return self.field_values[new_i][new_j]
-            
-            return False
         
-        def get_val(self):
+        def get_val(self) -> any:
             i, j = self.position
             return self.field_values[i][j]
         
-        def call_action(self):
+        def call_action(self) -> any:
             t = precise_time()
             i, j = self.position
 
@@ -290,7 +278,7 @@ def classes():
         def get(self):
             return self.get_in_scope_with_markers()
         
-        def get_with_cursor(self, cursor:str= "_"):
+        def get_with_cursor(self, cursor:str= "_") -> str:
             s = self.get_in_scope_with_markers()
             s = s[: self.cursor_position] + cursor + s[self.cursor_position+1 :]
             return s
@@ -686,8 +674,10 @@ def general_functions():
     global secs_to_text, secs_to_units
     global print_separate, highlight
     global rgb
-    global set_terminal_zoom
-    global terminal_is_focused
+    global press_ctrl, scroll_with_mouse, release_ctrl
+    global get_terminal_size, set_terminal_size_to_limit
+    global terminal_is_focused, focus_terminal
+    global reset_view
     global contracted_art_to_array, place_art
     global is_spotify_running, ensure_spotify_is_running
     global get_devices, choose_from_devices, get_preferred_device_id
@@ -698,7 +688,7 @@ def general_functions():
     global toggle_time_edit_mode, toggle_search_mode
 ###
 ###
-    def secs_to_text(seconds:float) :
+    def secs_to_text(seconds:float) -> str:
         seconds = int(seconds)
         text = ""
         for i in range(6):
@@ -710,9 +700,9 @@ def general_functions():
         text = f'{text}\b'
         return text
 
-    def secs_to_units(seconds:float) :
+    def secs_to_units(seconds:float) -> tuple[int, int, int, int, int, int]:
         seconds = int(seconds)
-        units = [0 for i in range(6)]
+        units = [0 for _ in range(6)]
         for i in range(3):
             conv = TIME_CONVERT_LIST[3+i]
             if conv <= seconds:
@@ -741,27 +731,65 @@ def general_functions():
         wait_seconds(for_seconds)
 
 
-    def rgb(r:int= 0, g:int= 0, b:int= 0):
+    def rgb(r:int= 0, g:int= 0, b:int= 0) -> str:
         return f"\033[38;2;{r};{g};{b}m"
 
 
-    def set_terminal_zoom(width, height):
-        if os.name == "nt": # For Windows
-            pass # "Can't change zoom on Windows ;("
+    def press_ctrl():
+        ctypes.windll.user32.keybd_event(0x11, 0, 0, 0)
+    
+    def scroll_with_mouse(amount):
+        ctypes.windll.user32.mouse_event(0x0800, 0, 0, amount, 0)
+        wait(0.005)
+    
+    def release_ctrl():
+        ctypes.windll.user32.keybd_event(0x11, 0, 2, 0)
 
-        elif os.name == "posix": # For Linux
-            sys.stdout.write(f"\x1b[8;{height};{width}t")
-            sys.stdout.flush()
 
+    def get_terminal_size() -> tuple[int, int]:
+        s = os.get_terminal_size()
+        return (s.columns, s.lines)
+
+    def set_terminal_size_to_limit(size_limit:tuple[int|None, int|None]):
+        previously_focused = getActiveWindow()
+        focus_terminal()
+        press_ctrl()
+        
+        width_limit, height_limit = size_limit
+
+        width, height = get_terminal_size()
+        
+        def should_increase(): return (width_limit and width< width_limit) or (height_limit and height< height_limit)
+        def should_decrease(): return (width_limit and width_limit<= width) and (height_limit and height_limit<= height)
+        
+        if should_increase():
+            while should_increase():
+                scroll_with_mouse(-1)
+                width, height = get_terminal_size()
         else:
-            print("(Can't set terminal size)")
+            while should_decrease():
+                scroll_with_mouse(1)
+                width, height = get_terminal_size()
+            scroll_with_mouse(-1)
+        
+        release_ctrl()
+
+        previously_focused.activate()
 
 
-    def terminal_is_focused():
-        return GetForegroundWindow() == TERMINAL_WINDOW_ID
+    def terminal_is_focused() -> bool:
+        return getActiveWindow() == TERMINAL_WINDOW
+    
+    def focus_terminal():
+        TERMINAL_WINDOW.activate()
 
 
-    def contracted_art_to_array(art, color=Fore.WHITE, end_color=Fore.WHITE):
+    def reset_view():
+        set_terminal_size_to_limit((window_width, window_height+2))
+        terminal_display.clear()
+
+
+    def contracted_art_to_array(art, color:str= Fore.WHITE, end_color:str= Fore.WHITE) -> np.array:
         l = []
         for string in art:
             s = list(string)
@@ -778,7 +806,7 @@ def general_functions():
         display_map.add_map_array((row, col), ART_ARRAYS[art_name])
 
 
-    def is_spotify_running():
+    def is_spotify_running() -> bool:
         for proc in psutil.process_iter(['name']):
             if proc.info['name'] and 'spotify' in proc.info['name'].lower():
                 return True
@@ -788,16 +816,17 @@ def general_functions():
         if not is_spotify_running():
             os.system('powershell -ExecutionPolicy Bypass -Command "Start-Process .\\Spotify.lnk -WindowStyle Hidden"')
             print("Launching spotify...\n")
-            while not is_spotify_running(): wait(0.1)
-            wait(5)
+            if not is_spotify_running():
+                while not is_spotify_running(): wait(0.1)
+                wait(5)
 
 
-    def get_devices():
+    def get_devices() -> any:
         return sp.devices().get('devices', [])
 
-    def choose_from_devices(devices):
+    def choose_from_devices(devices) -> str:
         global selected_device_id
-        selected_device_id = None
+        selected_device_id = ""
         names = []
         ids = []
         for device in devices:
@@ -806,7 +835,7 @@ def general_functions():
                 ids.append(device['id'])
         
         if len(ids) == 1:
-            selected_device_id = ids[0]
+            selected_device_id = str(ids[0])
             print("\nSelected:", names[0])
         else:
             
@@ -818,7 +847,7 @@ def general_functions():
             
             def select():
                 global selected_device_id
-                selected_device_id = ids[device_selector.position[1]]
+                selected_device_id = str(ids[device_selector.position[1]])
 
             key_action_dict = {
                 'a' : device_selector.move_left,   Key.left : device_selector.move_left,
@@ -851,7 +880,7 @@ def general_functions():
             
         return selected_device_id
 
-    def get_preferred_device_id(print_none_active:bool= False):
+    def get_preferred_device_id(print_none_active:bool= False) -> str:
         devices = get_devices()
         if not devices:
             raise("No available devices found.")
@@ -933,7 +962,7 @@ def general_functions():
             'd' : action_selector.move_right,     Key.right : action_selector.move_right,
             Key.space : call_action_and_update_status,
             'f' : toggle_search_mode,
-            'e' : terminal_display.clear,
+            'e' : reset_view,
         }
 
     def set_search_typer_for_key_dict():
@@ -1087,7 +1116,7 @@ def spotify_status_functions():
     global get_volume, update_volume_bar
 ###
 ###
-    def get_shuffle_status():
+    def get_shuffle_status() -> str:
         if current:
             if current['smart_shuffle']:
                 return 'smart_shuffle'
@@ -1098,7 +1127,7 @@ def spotify_status_functions():
             else:
                 return 'no_shuffle'
 
-    def update_shuffle_status():
+    def update_shuffle_status() -> str:
         if current:
             shuffle_status = get_shuffle_status()
             place_art(shuffle_status)
@@ -1106,11 +1135,11 @@ def spotify_status_functions():
             return shuffle_status
 
 
-    def get_playing_status():
+    def get_playing_status() -> bool:
         if current:
             return current['is_playing']
 
-    def update_playing_status():
+    def update_playing_status() -> bool:
         if current:
             playing_status = get_playing_status()
             place_art('pause' if playing_status else 'resume')
@@ -1118,7 +1147,7 @@ def spotify_status_functions():
             return playing_status
 
 
-    def get_liked_status():
+    def get_liked_status() -> bool:
         if current:
             track_id = current['item']['id']
             liked = sp.current_user_saved_tracks_contains([track_id])[0]
@@ -1130,7 +1159,7 @@ def spotify_status_functions():
             place_art('liked' if status else 'like')
 
 
-    def get_song_length():
+    def get_song_length() -> float:
         if current and current['item']['duration_ms']:
             song_length = current['item']['duration_ms'] / 1000
             return song_length
@@ -1168,12 +1197,12 @@ def spotify_status_functions():
                 display_map.add_map_array(ART_PLACES['5x4_minute_0'], minute_0_art)
 
 
-    def get_time():
+    def get_time() -> float:
         if current and current['progress_ms']:
             current_time = current['progress_ms'] / 1000
             return current_time
         else:
-            return 0
+            return 0.0
 
     def update_time(secs):
         place_art('3x3_line')
@@ -1219,27 +1248,25 @@ def spotify_status_functions():
         display_map.add_map_array(ART_PLACES['progress_bar'], np.array([progress_bar], dtype=np.object_))
 
 
-    def get_volume():
+    def get_volume() -> float:
         if current and current["device"]:
             playback_volume = current["device"]["volume_percent"]
             return playback_volume
 
 
-    def get_next_up_tracks():
+    def get_next_up_tracks() -> tuple:
         if current:
             queue = sp.queue()
             next_up_tracks = []
             for track in queue['queue']:
                 next_up_tracks.append( (track['name'], ', '.join(artist['name'] for artist in track['artists'])) )
 
-            return next_up_tracks
+            return tuple(next_up_tracks)
 
     def update_next_up_tracks():
-        next_up_tracks = get_next_up_tracks()
-        if next_up_tracks:
-            next_9_tracks = get_next_up_tracks()[:9]
-
-            next_up_tracks = []
+        next_9_tracks = get_next_up_tracks()[:9]
+        if next_9_tracks:
+            next_up_tracks_texts = []
 
             track_length_limit = len(ART_ARRAYS['next_up_tracks'][0])
             for track in next_9_tracks:
@@ -1262,18 +1289,18 @@ def spotify_status_functions():
                 leftover = track_length_limit-len(track_text)
                 if 0< leftover: track_text += " "*leftover
 
-                next_up_tracks.append(track_text)
+                next_up_tracks_texts.append(track_text)
 
             place_art('next_up_tracks')
 
-            display_map.add_map_array(ART_PLACES['next_up_tracks'], contracted_art_to_array(next_up_tracks, ART_COLORS['next_up_tracks']))
+            display_map.add_map_array(ART_PLACES['next_up_tracks'], contracted_art_to_array(next_up_tracks_texts, ART_COLORS['next_up_tracks']))
 
 
-    def get_album_cover_url():
+    def get_album_cover_url() -> str:
         if current:
             return current['item']['album']['images'][0]['url']
 
-    def download_image(url):
+    def download_image(url) -> CustomImage:
         try:
             response = requests.get(url)
             response.raise_for_status()
@@ -1283,7 +1310,7 @@ def spotify_status_functions():
         except:
             return CustomImage(ART_ARRAYS['cover_art'])
 
-    def get_album_cover_array():
+    def get_album_cover_array() -> np.array:
         album_cover_url = get_album_cover_url() # 'https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0' # 
         downloaded_image = download_image(album_cover_url)
 
@@ -1302,12 +1329,12 @@ def spotify_status_functions():
 
 
 
-    def get_lyrics():
+    def get_lyrics() -> tuple:
         def parse_lrc(lrc_content):
             timestamp_pattern = re.compile(r'\[(\d+):(\d+(?:\.\d+)?)\]')
             lyrics = []
             if not lrc_content:
-                return " "
+                return ()
             for line in lrc_content.splitlines():
                 timestamps = timestamp_pattern.findall(line)
                 if timestamps:
@@ -1316,15 +1343,15 @@ def spotify_status_functions():
                         timestamp = int(minute) * 60 + float(second)
                         lyrics.append((timestamp, lyric_text))
             lyrics.sort(key=lambda x: x[0])
-            return lyrics
+            return tuple(lyrics)
         
         if current:
             lyrics = syncedlyrics.search(f"{get_current_track_name()} - {get_current_artists()}", synced_only=True)
             return parse_lrc(lyrics)
         else:
-            return " "
+            return ()
 
-    def get_current_lyrics_part(lyrics, current_time, previous_lines_count, next_lines_count):
+    def get_current_lyrics_part(lyrics, current_time, previous_lines_count, next_lines_count) -> str:
         current_index = -1
 
         for i, (timestamp, line) in enumerate(lyrics):
@@ -1343,12 +1370,12 @@ def spotify_status_functions():
 
         padding_needed_previous = previous_lines_count - (current_index - start_index)
         if padding_needed_previous > 0:
-            padding_previous = [(-1, " ") for _ in range(padding_needed_previous)]
+            padding_previous = tuple((-1, " ") for _ in range(padding_needed_previous))
             current_lyrics_part = padding_previous + current_lyrics_part
 
         padding_needed_next = next_lines_count - (end_index - (current_index + 1))
         if padding_needed_next > 0:
-            padding_next = [(-1, " ") for _ in range(padding_needed_next)]
+            padding_next = tuple((-1, " ") for _ in range(padding_needed_next))
             current_lyrics_part = current_lyrics_part + padding_next
 
         current_text = [text for _, text in current_lyrics_part]
@@ -1416,7 +1443,7 @@ def spotify_status_functions():
                     y += 1
             
 
-    def get_current_playlist_name():
+    def get_current_playlist_name() -> str:
         if current and current['context']:
             context_type = current['context']['type']
             if context_type == 'playlist':
@@ -1436,7 +1463,7 @@ def spotify_status_functions():
         else:
             return "Spotify's selection"
 
-    def update_playlist_name():
+    def update_playlist_name() -> str:
         playlist_name = get_current_playlist_name()[ :len(ART_ARRAYS['playlist'][0])]
         place_art('playlist')
 
@@ -1445,13 +1472,13 @@ def spotify_status_functions():
         return playlist_name
 
 
-    def get_current_track_name():
+    def get_current_track_name() -> str:
         if current:
             return current['item']['name']
         else:
             return " "
 
-    def update_track_name():
+    def update_track_name() -> str:
         track_name = get_current_track_name()[ :len(ART_ARRAYS['track_name'][0])]
         place_art('track_name')
 
@@ -1460,7 +1487,7 @@ def spotify_status_functions():
         return track_name
 
 
-    def get_current_artists():
+    def get_current_artists() -> str:
         if current:
             artists = []
             for artist in current['item']['artists']:
@@ -1469,14 +1496,14 @@ def spotify_status_functions():
         else:
             return " "
 
-    def update_artists():
+    def update_artists() -> str:
         artists = get_current_artists()[ :len(ART_ARRAYS['artists'][0])]
         place_art('artists')
 
         display_map.add_map_array(ART_PLACES['artists'], contracted_art_to_array([artists], ART_COLORS['artists']))
 
         return artists
-                
+
 
     def update_selector():
         if current:
@@ -1659,7 +1686,7 @@ def spotify_interact_functions():
         adjust_volume(dir=+1)
 
 
-    def search_tracks(query:str, limit=8):
+    def search_tracks(query:str, limit=8) -> tuple:
         global search_result_tracks
 
         if query:
@@ -1755,10 +1782,10 @@ def main_loop():
             terminal_display.update(display_map, fps=12)
 
             time_since_last_sync = round(precise_time() - last_request_time,1)
-            sys.stdout.write(f'\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync}')
+            sys.stdout.write(f"\n{rgb(55, 55, 55)}Last Sync:{rgb(30, 40, 40)} {time_since_last_sync}")
 
             if 10< time_since_last_sync:
-                sys.stdout.write(f'{rgb(120, 55, 55)}+')
+                sys.stdout.write(f"{rgb(120, 55, 55)}+")
                 ensure_spotify_is_running()
                 DEVICE_ID = get_preferred_device_id()
                 if not playing_status:
@@ -1766,51 +1793,51 @@ def main_loop():
                 last_request_time = precise_time()-request_buffer-0.1
 
         except Exception as e:
-            sys.stdout.write(f'{rgb(120, 55, 55)}|Error| {e}')
+            sys.stdout.write(f"{rgb(120, 55, 55)}|Error| {e}")
             sys.stdout.flush()
 
 
 
 
 
-# ///==================== Main thread ====================\\\
-                                                            #
-if __name__ == "__main__":                                  #
-    # ~~ Guess terminal as currently focused window         #
-    TERMINAL_WINDOW_ID = GetForegroundWindow()              #
-                                                            #
-    # ~~ Initialize colorama, Clear output, Hide cursor     #
-    colorama.init()                                         #
-    os.system('cls')                                        #
-    stdout.write("\033[?25l")                               #
-                                                            #
-    # ~~ Ensure Spotify                                     #
-    ensure_spotify_is_running()                             #
-    # ~~ Focus back on terminal window                      #
-    SetForegroundWindow(TERMINAL_WINDOW_ID)                 #
-                                                            #
-    # ~~ Set globals                                        #
-    globalize_screener_values()                             #
-    globalize_time_convert_values()                         #
-    globalize_ART_values()                                  #
-    globalize_spotify_values()                              #
-    globalize_key_action_dict()                             #
-    globalize_action_selector()                             #
-    globalize_mode_values()                                 #
-                                                            #
-    # ~~ Set terminal's size                                #
-    set_terminal_zoom(window_width, window_height+2)        #
-                                                            #
-    # ~~ Start listener                                     #
-    set_listener_for_selector()                             #
-                                                            #
-    # ~~ Choose device                                      #
-    DEVICE_ID = get_preferred_device_id(True)               #
-                                                            #
-    # ~~ Use action_selector                                #
-    set_action_selector_for_key_dict()                      #
-                                                            #
-    # ~~ Enter main loop                                    #
-    main_loop()                                             #
-                                                            #
-# \\\================== Main thread end ==================///
+# ///====================== Main thread ======================\\\
+                                                                #
+if __name__ == "__main__":                                      #
+    # ~~ Guess terminal as currently focused window             #
+    TERMINAL_WINDOW = getActiveWindow()                         #
+                                                                #
+    # ~~ Initialize colorama, Clear output, Hide cursor         #
+    colorama.init()                                             #
+    os.system('cls')                                            #
+    stdout.write("\033[?25l")                                   #
+                                                                #
+    # ~~ Ensure Spotify                                         #
+    ensure_spotify_is_running()                                 #
+    # ~~ Focus back on terminal window                          #
+    focus_terminal()                                            #
+                                                                #
+    # ~~ Set globals                                            #
+    globalize_screener_values()                                 #
+    globalize_time_convert_values()                             #
+    globalize_ART_values()                                      #
+    globalize_spotify_values()                                  #
+    globalize_key_action_dict()                                 #
+    globalize_action_selector()                                 #
+    globalize_mode_values()                                     #
+                                                                #
+    # ~~ Set terminal's size                                    #
+    set_terminal_size_to_limit((window_width, window_height+2)) #
+                                                                #
+    # ~~ Start listener                                         #
+    set_listener_for_selector()                                 #
+                                                                #
+    # ~~ Choose device                                          #
+    DEVICE_ID = get_preferred_device_id(True)                   #
+                                                                #
+    # ~~ Use action_selector                                    #
+    set_action_selector_for_key_dict()                          #
+                                                                #
+    # ~~ Enter main loop                                        #
+    main_loop()                                                 #
+                                                                #
+# \\\==================== Main thread end ====================///
