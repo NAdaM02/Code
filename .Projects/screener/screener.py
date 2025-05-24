@@ -191,11 +191,15 @@ class CustomImage:
         return self
 
     def be_camera(self, flip_it:bool=True):
-        _, img = camera.read()
+        _, _img = camera.read()
+
+        img = cv2.cvtColor(_img, cv2.COLOR_BGR2RGB)
+
         if flip_it:
             self.array = np.fliplr(img)
         else:
             self.array = img
+            
         return self
     
     def save_as_img(self, name:str= 'image'):
@@ -743,14 +747,15 @@ if __name__ == "__main__":
     colorama.init() # Initialize terminal formatting
 
     screen_capturer = dxcam.create()
-    camera = cv2.VideoCapture(0)
+    #camera = cv2.VideoCapture(0)
+    camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
     w, h = 0, 0
     last_update = precise_time()
 
     while True:
-        custom_image = CustomImage().be_screenshot(bbox)
-        #custom_image = CustomImage().be_camera()
+        #custom_image = CustomImage().be_screenshot(bbox)
+        custom_image = CustomImage().be_camera()
 
         if width != None:
             display_map = custom_image.to_color_shape_map(width, height, convert_method)
