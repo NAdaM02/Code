@@ -114,7 +114,7 @@ def classes():
             self.height = height
 
         def to_beginning(self):
-            sys.stdout.write(f"\033[{self.height+1}A\033[2K\n")
+            stdout.write(f"\033[{self.height+1}A\033[2K\n")
         
         def clear(self):
             os.system('cls')
