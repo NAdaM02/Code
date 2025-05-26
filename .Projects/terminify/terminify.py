@@ -1800,9 +1800,9 @@ def main_loop():
                 last_request_time = precise_time()-request_buffer-0.1
 
         except Exception as e:
-            sys.stdout.write(f"{rgb(120, 55, 55)}|Error| {e}")
-            sys.stdout.flush()
-
+            #sys.stdout.write(f"{rgb(120, 55, 55)}|Error| {e}")
+            #sys.stdout.flush()
+            pass
 
 
 
