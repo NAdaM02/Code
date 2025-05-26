@@ -423,7 +423,6 @@ classes()
 
 def globals():
     global globalize_screener_values
-    global globalize_time_convert_values
     global globalize_ART_values
     global globalize_spotify_values
     global globalize_key_action_dict
@@ -452,13 +451,6 @@ def globals():
         display_map = CharacterMap(window_width, window_height, filler=' ', U1dtype=False)
 
         GLOBAL_last_frame_time = 0
-
-
-    def globalize_time_convert_values():
-        global TIME_CONVERT_LIST, TIME_CHAR_LIST
-
-        TIME_CONVERT_LIST = (29030400, 604800, 86400, 3600, 60, 1)
-        TIME_CHAR_LIST = ('y', 'w', 'd', 'h', 'm', 's')
 
 
     def globalize_ART_values():
@@ -631,7 +623,7 @@ def globals():
         liked_status = False
         time_since_last_sync = precise_time()-request_buffer-0.1
         album_cover_array = []
-        search_result_tracks = None
+        search_result_tracks = []
         volume = 0
         last_volume_adjust_time = 0
         last_time_adjust_time = 0
@@ -692,11 +684,11 @@ def general_functions():
         seconds = int(seconds)
         text = ""
         for i in range(6):
-            conv = TIME_CONVERT_LIST[i]
+            conv = (29030400, 604800, 86400, 3600, 60, 1)[i]
             if conv <= seconds:
                 un = seconds//conv
                 seconds -= un*conv
-                text += str(un) + TIME_CHAR_LIST[i] + " "
+                text += str(un) + ('y', 'w', 'd', 'h', 'm', 's')[i] + " "
         text = f'{text}\b'
         return text
 
@@ -704,7 +696,7 @@ def general_functions():
         seconds = int(seconds)
         units = [0 for _ in range(6)]
         for i in range(3):
-            conv = TIME_CONVERT_LIST[3+i]
+            conv = (29030400, 604800, 86400, 3600, 60, 1)[3+i]
             if conv <= seconds:
                 un = seconds//conv
                 seconds -= un*conv
@@ -750,7 +742,10 @@ def general_functions():
         s = os.get_terminal_size()
         return (s.columns, s.lines)
 
-    def set_terminal_size_to_limit(size_limit:tuple[int|None, int|None]):
+    def set_terminal_size_to_limit(size_limit:tuple[int|None, int|None], print_help:bool= True):
+        os.system('cls')
+        if print_help:
+            print("Currently setting terminal size.\n(This requires mouse hovering over terminal interface.)")
         previously_focused = getActiveWindow()
         focus_terminal()
         press_ctrl()
@@ -774,6 +769,10 @@ def general_functions():
         
         release_ctrl()
 
+        if print_help:
+            print("\nTerminal size set.")
+            os.system('cls')
+
         previously_focused.activate()
 
 
@@ -785,7 +784,7 @@ def general_functions():
 
 
     def reset_view():
-        set_terminal_size_to_limit((window_width, window_height+2))
+        set_terminal_size_to_limit((window_width, window_height+2), print_help=False)
         terminal_display.clear()
 
 
@@ -882,13 +881,21 @@ def general_functions():
 
     def get_preferred_device_id(print_none_active:bool= False) -> str:
         devices = get_devices()
-        if not devices:
-            raise("No available devices found.")
+        _dot_count = 0
+        _was_not_devices = False
+        while not devices:
+            _was_not_devices = True
+            _dot_count += 1 if _dot_count!=3 else -3
+            print("\rWaiting for devices"+"."*_dot_count+" "*(3-_dot_count), end="")
+            wait(0.5)
+            devices = get_devices()
+        if _was_not_devices:
+            print("\rFound a device.       ")
 
         for device in devices:
             if device.get('is_active') and not device.get('is_restricted'):
                 return device['id']
-        if print_none_active:
+        if print_none_active and not _was_not_devices:
             print("No active devices found.")
 
         device_id = choose_from_devices(devices)
@@ -926,7 +933,7 @@ def general_functions():
                 except:
                     c = key.char
                     
-                    search_result_tracks = None
+                    search_result_tracks = []
                     search_typer.add_text(c)
             except:
                 pass
@@ -1086,7 +1093,7 @@ def general_functions():
 
             key_action_dict = _k_a_d
 
-            search_result_tracks = None
+            search_result_tracks = []
             search_typer.clear()
             
         return search_mode
@@ -1818,7 +1825,6 @@ if __name__ == "__main__":                                      #
                                                                 #
     # ~~ Set globals                                            #
     globalize_screener_values()                                 #
-    globalize_time_convert_values()                             #
     globalize_ART_values()                                      #
     globalize_spotify_values()                                  #
     globalize_key_action_dict()                                 #
