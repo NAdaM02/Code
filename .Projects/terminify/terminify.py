@@ -1335,9 +1335,11 @@ def spotify_status_functions():
                 place_art('album_cover')
 
 
-
     def get_lyrics() -> tuple:
         def parse_lrc(lrc_content):
+            if lrc_content is None:
+                return ()
+            
             timestamp_pattern = re.compile(r'\[(\d+):(\d+(?:\.\d+)?)\]')
             lyrics = []
             if not lrc_content:
@@ -1350,12 +1352,17 @@ def spotify_status_functions():
                         timestamp = int(minute) * 60 + float(second)
                         lyrics.append((timestamp, lyric_text))
             lyrics.sort(key=lambda x: x[0])
+
             return tuple(lyrics)
         
         if current:
-            lyrics = syncedlyrics.search(f"{get_current_track_name()} - {get_current_artists()}", synced_only=True)
+            search_query = f"{get_current_track_name()} {get_current_artists()}"
+            _providers=["Musixmatch", "Lrclib", "NetEase", "Megalobiz", "Genius"]
+            lyrics = syncedlyrics.search(search_query, providers=_providers, synced_only=True)
+
             return parse_lrc(lyrics)
         else:
+            
             return ()
 
     def get_current_lyrics_part(lyrics, current_time, previous_lines_count, next_lines_count) -> str:
