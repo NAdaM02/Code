@@ -492,17 +492,20 @@ def get_calendar_events() -> list:
     return [f"{dt.astimezone().strftime('%d %b %H:%M')} {title}" for dt, title in events]
 
 def get_spotify_status() -> str:
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
-        client_id=SPOTIFY_CLIENT_ID,
-        client_secret=SPOTIFY_CLIENT_SECRET,
-        redirect_uri='http://localhost:8888/callback',
-        scope='user-read-playback-state'
-    ))
-    cur = sp.current_playback()
-    if cur and cur.get('item'):
-        t = cur['item']
-        return f"♪ {t['name']} - {t['artists'][0]['name']}"
-    return "♪ Paused"
+    try:
+        sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+            client_id=SPOTIFY_CLIENT_ID,
+            client_secret=SPOTIFY_CLIENT_SECRET,
+            redirect_uri='http://localhost:8888/callback',
+            scope='user-read-playback-state'
+        ))
+        cur = sp.current_playback()
+        if cur and cur.get('item'):
+            t = cur['item']
+            return f"♪ {t['name']} - {t['artists'][0]['name']}"
+        return "♪ Paused"
+    except:
+        return "No songs playing"
 
 # ─────────────────────────────────────────────────────────────────────────────
 #                             RENDER DASHBOARD
@@ -524,7 +527,7 @@ def draw_dashboard():
         display_map.add_map_array((4+i, 0), contracted_art_to_array([line]))
 
     # News
-    news = get_headlines(5)
+    news = get_headlines(3)
     for idx, (title, url) in enumerate(news):
         display_map.add_map_array((10+3*idx, 0), contracted_art_to_array([title]))
         full_text = fetch_full_text(url)
@@ -535,6 +538,7 @@ def draw_dashboard():
         #print(summary)
         #wait(10)
         display_map.add_map_array((10+3*idx+1, 0), contracted_art_to_array([summary]))
+        display_map.add_map_array((10+3*idx+2, 0), contracted_art_to_array([summary[W:]]))
 
     # Spotify
     sp = get_spotify_status()
