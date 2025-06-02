@@ -748,14 +748,14 @@ if __name__ == "__main__":
 
     screen_capturer = dxcam.create()
     #camera = cv2.VideoCapture(0)
-    camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    #camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
     w, h = 0, 0
     last_update = precise_time()
 
     while True:
-        #custom_image = CustomImage().be_screenshot(bbox)
-        custom_image = CustomImage().be_camera()
+        custom_image = CustomImage().be_screenshot(bbox)
+        #custom_image = CustomImage().be_camera()
 
         if width != None:
             display_map = custom_image.to_color_shape_map(width, height, convert_method)
