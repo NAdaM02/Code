@@ -145,14 +145,14 @@ def classes():
         def __init__(self, image_array:np.array= ()):
             self.array = np.array(image_array)
 
-        def downscale(self, target_width:int, target_height:int, method=cv2.INTER_LINEAR_EXACT) -> any:
+        def scale(self, target_width:int, target_height:int, method=cv2.INTER_LINEAR_EXACT) -> any:
             self.array = cv2.resize(self.array, (target_width, target_height), interpolation=method)
 
             return self
 
         def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, downscale_method:int= cv2.INTER_LINEAR_EXACT) -> CharacterMap:
 
-            self.downscale(target_width * 3, target_height * 3, downscale_method)
+            self.scale(target_width * 3, target_height * 3, downscale_method)
 
             height, width, _ = self.array.shape
             grid_rows = height // 3
@@ -187,6 +187,11 @@ def classes():
             color_shape_map.array = (color_strings.reshape(target_height, target_width) + chars)
 
             return color_shape_map
+
+        def show(self):
+            bgr_image_array = cv2.cvtColor(self.array, cv2.COLOR_RGB2BGR)
+            cv2.waitKey(1)
+            cv2.imshow("CustomImage", bgr_image_array)
 
 
     class Selector():
@@ -1130,7 +1135,6 @@ def general_functions():
         )
         
         audio_stream.start()
-
 ###
 ##
 general_functions()
@@ -1356,7 +1360,7 @@ def spotify_status_functions():
         album_cover_url = get_album_cover_url() # 'https://i.scdn.co/image/ab67616d0000b27351c02a77d09dfcd53c8676d0' # 
         downloaded_image = download_image(album_cover_url)
 
-        #for tw, th in ((30,30),(90,90)): Image.fromarray(downloaded_image.downscale(tw,th).array).save(f"album_cover-{tw}x{th}.png")
+        #for tw, th in ((30,30),(90,90)): Image.fromarray(downloaded_image.scale(tw,th).array).save(f"album_cover-{tw}x{th}.png")
 
         album_cover_array = downloaded_image.to_color_shape_map(60,30).array
 
@@ -1634,44 +1638,51 @@ def spotify_status_functions():
         display_map.add_map_array(ART_PLACES['volume_bar'], contracted_art_to_array(volume_list, ART_COLORS['volume_bar']))
 
 
-    def get_sound_circle(audio_chunk, sample_rate=44100, size=25) -> np.ndarray:
-        # === 1. Calculate audio energy
+    def get_sound_circle(audio_chunk, sample_rate=44100, size=75) -> np.ndarray:
         energy = np.sqrt(np.mean(audio_chunk**2))
+        energy = np.clip(energy * 8, 0.0, 1.0)
+        """
+        center = np.array([size // 2, size // 2])
+        Y, X = np.ogrid[:size, :size]
+        dist = np.sqrt((X - center[1])**2 + (Y - center[0])**2)
 
-        # === 2. Dynamic parameters based on energy
-        base_radius = 6
-        max_radius = 11
-        radius = int(base_radius + min(energy * 100, 1.0) * (max_radius - base_radius))
+        # Direct random noise at full resolution (no interpolation)
+        np.random.seed(0)
+        noise = (np.random.rand(size, size) - 0.5) * 0.4
 
-        hue = int(min(energy * 300, 179))         # Hue for color
-        ring_thickness = 2                        # Ring width in px
+        base_radius = size * (0.25 + 0.7 * energy) - 5
+        thickness = 4.5 + 1.2 * energy
 
-        # === 3. Create HSV image
-        hsv = np.zeros((size, size, 3), dtype=np.uint8)
-        center = (size // 2, size // 2)
+        distorted_radius = base_radius * (1 + 0.3 * noise + 0.3 * (Y / size - 0.5))
 
-        # Draw outer ring (with thickness)
-        for r in range(radius - ring_thickness, radius + 1):
-            cv2.circle(hsv, center, r, color=(hue, 255, 255), thickness=1)
+        ring = np.exp(-((dist - distorted_radius) ** 2) / (2 * (thickness ** 2)))
 
-        # Optional: draw a center glow
-        cv2.circle(hsv, center, 2, color=(hue, 255, int(255 * min(1, energy * 10))), thickness=-1)
+        glow_radius = size * 0.18
+        glow = np.exp(-(dist ** 2) / (2 * (glow_radius ** 2)))
+        glow *= (0.3 + 0.4 * energy) * (1 + 0.25 * noise)
 
-        # === 4. Apply soft blur to create glow-like falloff
-        hsv = cv2.GaussianBlur(hsv, (5, 5), sigmaX=1.5)
+        brightness = ring * 0.9 + glow * 0.4
+        brightness = np.clip(brightness, 0, 1)
 
-        # === 5. Convert HSV → RGB
-        img = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+        img = (brightness * 170).astype(np.uint8)
+        rgb = np.stack([img] * 3, axis=-1)
 
-        # === 6. Convert to 5×5 char map
-        circle_char_map = CustomImage(np.array(img)).to_color_shape_map(5, 3)
+
+        ###
+        c_img = CustomImage(rgb)
+
+        c_img.show()
+
+        circle_char_map = c_img.to_color_shape_map(5, 3)"""
+
+        circle_char_map = contracted_art_to_array([str(round(energy, 2))])
+
         return circle_char_map
-
 
     def update_sound_circle(data):
         circle_map = get_sound_circle(data)
 
-        display_map.add_map_array(ART_PLACES['sound_circle'], circle_map.array)
+        display_map.add_map_array(ART_PLACES['sound_circle'], circle_map)
 ###
 ##
 spotify_status_functions()
