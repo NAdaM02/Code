@@ -21,6 +21,7 @@ import ctypes
 from pygetwindow import getActiveWindow
 import psutil
 from dotenv import load_dotenv
+import sounddevice
 
 
 
@@ -149,7 +150,7 @@ def classes():
 
             return self
 
-        def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, downscale_method:int= cv2.INTER_LINEAR_EXACT) -> np.array:
+        def to_color_shape_map(self, target_width:int= -1, target_height:int= -1, downscale_method:int= cv2.INTER_LINEAR_EXACT) -> CharacterMap:
 
             self.downscale(target_width * 3, target_height * 3, downscale_method)
 
@@ -544,6 +545,7 @@ def globals():
             'lyrics' : (12, 63),
             'search_bar' : (3, 3),
             'volume_bar' : (25, 94),
+            'sound_circle' : (33, 58),
         }
         
         ART_COLORS = {
@@ -598,7 +600,7 @@ def globals():
 
 
     def globalize_spotify_values():
-        global sp, current, request_buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status, time_since_last_sync, album_cover_array, search_result_tracks, volume, last_volume_adjust_time, last_time_adjust_time
+        global sp, current, request_buffer, current_time, song_length, progress, last_request_time, last_calculated_time, lyrics, playing_status, previous_name, liked_status, time_since_last_sync, album_cover_array, search_result_tracks, volume, last_volume_adjust_time, last_time_adjust_time, audio_stream
         load_dotenv()
         sp = spotipy.Spotify(
             auth_manager=spotipy.oauth2.SpotifyOAuth(
@@ -627,6 +629,7 @@ def globals():
         volume = 0
         last_volume_adjust_time = 0
         last_time_adjust_time = 0
+        audio_stream = None
 
 
     def globalize_key_action_dict():
@@ -673,11 +676,13 @@ def general_functions():
     global contracted_art_to_array, place_art
     global is_spotify_running, ensure_spotify_is_running
     global get_devices, choose_from_devices, get_preferred_device_id
+    global get_audio_device_id
     global call_action_and_update_status
     global on_press_for_selector, on_press_for_typer
     global set_listener_for_selector, set_listener_for_typer
     global set_action_selector_for_key_dict, set_search_typer_for_key_dict, search_tracks_with_typer
     global toggle_time_edit_mode, toggle_search_mode
+    global hook_sound_circle
 ###
 ###
     def secs_to_text(seconds:float) -> str:
@@ -905,6 +910,17 @@ def general_functions():
         return device_id
 
 
+    def get_audio_device_id() -> int:
+        devices = sounddevice.query_devices()
+        try:
+            device_id = next(i for i, d in enumerate(devices) if "Stereo Mix" in d['name'])
+
+            return device_id
+
+        except StopIteration:
+            raise RuntimeError("No 'Stereo Mix' device found. Make sure it's enabled in Windows Sound Settings.")
+
+
     def call_action_and_update_status():
         global current
         action_selector.call_action()
@@ -1097,6 +1113,24 @@ def general_functions():
             search_typer.clear()
             
         return search_mode
+
+
+    def hook_sound_circle():
+        global audio_stream
+
+        def audio_callback(indata, frames, time, status):
+            update_sound_circle(indata[:, 0])
+    
+        audio_stream = sounddevice.InputStream(
+            device=AUDIO_ID,
+            channels=1,
+            samplerate=44100,
+            blocksize=1024,
+            callback=audio_callback
+        )
+        
+        audio_stream.start()
+
 ###
 ##
 general_functions()
@@ -1121,6 +1155,7 @@ def spotify_status_functions():
     global get_current_artists, update_artists
     global update_selector, update_search_bar, place_search_results
     global get_volume, update_volume_bar
+    global get_sound_circle, update_sound_circle
 ###
 ###
     def get_shuffle_status() -> str:
@@ -1597,6 +1632,46 @@ def spotify_status_functions():
             volume_list = list(volume_string[:scale])
 
         display_map.add_map_array(ART_PLACES['volume_bar'], contracted_art_to_array(volume_list, ART_COLORS['volume_bar']))
+
+
+    def get_sound_circle(audio_chunk, sample_rate=44100, size=25) -> np.ndarray:
+        # === 1. Calculate audio energy
+        energy = np.sqrt(np.mean(audio_chunk**2))
+
+        # === 2. Dynamic parameters based on energy
+        base_radius = 6
+        max_radius = 11
+        radius = int(base_radius + min(energy * 100, 1.0) * (max_radius - base_radius))
+
+        hue = int(min(energy * 300, 179))         # Hue for color
+        ring_thickness = 2                        # Ring width in px
+
+        # === 3. Create HSV image
+        hsv = np.zeros((size, size, 3), dtype=np.uint8)
+        center = (size // 2, size // 2)
+
+        # Draw outer ring (with thickness)
+        for r in range(radius - ring_thickness, radius + 1):
+            cv2.circle(hsv, center, r, color=(hue, 255, 255), thickness=1)
+
+        # Optional: draw a center glow
+        cv2.circle(hsv, center, 2, color=(hue, 255, int(255 * min(1, energy * 10))), thickness=-1)
+
+        # === 4. Apply soft blur to create glow-like falloff
+        hsv = cv2.GaussianBlur(hsv, (5, 5), sigmaX=1.5)
+
+        # === 5. Convert HSV → RGB
+        img = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+
+        # === 6. Convert to 5×5 char map
+        circle_char_map = CustomImage(np.array(img)).to_color_shape_map(5, 3)
+        return circle_char_map
+
+
+    def update_sound_circle(data):
+        circle_map = get_sound_circle(data)
+
+        display_map.add_map_array(ART_PLACES['sound_circle'], circle_map.array)
 ###
 ##
 spotify_status_functions()
@@ -1845,7 +1920,10 @@ if __name__ == "__main__":                                      #
     set_listener_for_selector()                                 #
                                                                 #
     # ~~ Choose device                                          #
-    DEVICE_ID = get_preferred_device_id(True)                   #
+    DEVICE_ID = get_preferred_device_id(print_none_active=True) #
+    AUDIO_ID = get_audio_device_id()                            #
+                                                                #
+    hook_sound_circle()                                         #
                                                                 #
     # ~~ Use action_selector                                    #
     set_action_selector_for_key_dict()                          #
